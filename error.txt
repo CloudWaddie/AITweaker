@@ -1,43 +1,11 @@
---- Starting Build Process ---
-PyInstaller found.
+PS C:\Users\25FAZEDW\OneDrive - Christian Brothers College\Desktop\LOCAL STUFF\AITweaker> python .\build.py
 
-Running PyInstaller command: pyinstaller --name AITweaker --windowed --clean gui.py
---- PyInstaller Execution Failed ---
+--- Starting py2exe Build Process ---
 
-364 INFO: PyInstaller: 6.16.0, contrib hooks: 2025.9
-364 INFO: Python: 3.11.9
-372 INFO: Platform: Windows-10-10.0.26100-SP0
-372 INFO: Python environment: C:\hostedtoolcache\windows\Python\3.11.9\x64
-372 INFO: wrote D:\a\AITweaker\AITweaker\AITweaker.spec
-374 INFO: Removing temporary files and cleaning cache in C:\Users\runneradmin\AppData\Local\pyinstaller
-374 INFO: Module search paths (PYTHONPATH):
-['C:\\hostedtoolcache\\windows\\Python\\3.11.9\\x64\\Scripts\\pyinstaller.exe',
- 'C:\\hostedtoolcache\\windows\\Python\\3.11.9\\x64\\python311.zip',
- 'C:\\hostedtoolcache\\windows\\Python\\3.11.9\\x64\\DLLs',
- 'C:\\hostedtoolcache\\windows\\Python\\3.11.9\\x64\\Lib',
- 'C:\\hostedtoolcache\\windows\\Python\\3.11.9\\x64',
- 'C:\\hostedtoolcache\\windows\\Python\\3.11.9\\x64\\Lib\\site-packages',
- 'D:\\a\\AITweaker\\AITweaker']
-679 INFO: checking Analysis
-681 INFO: Building Analysis because Analysis-00.toc is non existent
-681 INFO: Looking for Python shared library...
-681 INFO: Using Python shared library: C:\hostedtoolcache\windows\Python\3.11.9\x64\python311.dll
-681 INFO: Running Analysis Analysis-00.toc
-681 INFO: Target bytecode optimization level: 0
-681 INFO: Initializing module dependency graph...
-683 INFO: Initializing module graph hook caches...
-699 INFO: Analyzing modules for base_library.zip ...
-1590 INFO: Processing standard module hook 'hook-heapq.py' from 'C:\\hostedtoolcache\\windows\\Python\\3.11.9\\x64\\Lib\\site-packages\\PyInstaller\\hooks'
-1599 INFO: Processing standard module hook 'hook-encodings.py' from 'C:\\hostedtoolcache\\windows\\Python\\3.11.9\\x64\\Lib\\site-packages\\PyInstaller\\hooks'
-3795 INFO: Processing standard module hook 'hook-pickle.py' from 'C:\\hostedtoolcache\\windows\\Python\\3.11.9\\x64\\Lib\\site-packages\\PyInstaller\\hooks'
-5337 INFO: Caching module dependency graph...
-5373 INFO: Analyzing D:\a\AITweaker\AITweaker\gui.py
+Running py2exe build for AITweaker...
+usage: py2exe [global_opts] cmd1 [cmd1_opts] [cmd2 [cmd2_opts] ...]
+   or: py2exe --help [cmd1 cmd2 ...]
+   or: py2exe --help-commands
+   or: py2exe cmd --help
 
-Syntax error in D:\a\AITweaker\AITweaker\gui.py
-  File "D:\a\AITweaker\AITweaker\gui.py", line 384
-     self.log_message(f"Gemini modification {'enabled' if gemini_app_config["enabled"] else 'disabled'}.\n")
-                                                                             ^^^^^^^
- SyntaxError: f-string: unmatched '['
-
-
-------------------------------------
+error: no commands supplied

@@ -1,58 +1,46 @@
-import subprocess
 import sys
 import os
 import shutil
+import subprocess
 
 def build():
     """Packages the application using PyInstaller."""
-    print("--- Starting Build Process ---")
+    print("--- Starting PyInstaller Build Process ---")
     
     script_path = 'gui.py'
     app_name = "AITweaker"
+    output_dir = "dist"
 
-    # 1. Check for PyInstaller
-    try:
-        import PyInstaller
-        print("PyInstaller found.")
-    except ImportError:
-        print("Error: PyInstaller is not installed. Please run 'pip install pyinstaller' to install it.")
-        sys.exit(1)
+    # Ensure the output directory is clean
+    if os.path.exists(output_dir):
+        shutil.rmtree(output_dir, ignore_errors=True)
 
-    # 2. Run PyInstaller command
+    # PyInstaller command
     command = [
-        'pyinstaller',
-        '--name', app_name,
-        '--windowed',  # No console window for the GUI
-        '--clean',     # Clean PyInstaller cache and remove temporary files
+        "pyinstaller",
         script_path,
+        "--noconfirm", # Overwrite previous builds without asking
+        "--onedir",    # Create a one-folder bundle (reduces false positives)
+        f"--name={app_name}",
+        f"--distpath={output_dir}",
+        "--add-data=proxy.py;.",
+        "--add-data=profiles.json;.",
+        "--add-data=rules.json;.",
+        "--hidden-import=customtkinter", # Explicitly include customtkinter
+        "--hidden-import=mitmproxy",     # Explicitly include mitmproxy
     ]
 
-    print(f"\nRunning PyInstaller command: {' '.join(command)}")
+    print(f"\nRunning PyInstaller build for {app_name}...")
     try:
-        # Using capture_output to hide the verbose output unless there's an error
-        result = subprocess.run(command, check=True, capture_output=True, text=True)
-        print(result.stdout)
+        subprocess.run(command, check=True)
     except subprocess.CalledProcessError as e:
-        print("--- PyInstaller Execution Failed ---")
-        print(e.stdout)
-        print(e.stderr)
-        print("------------------------------------")
+        print(f"--- PyInstaller Execution Failed ---")
+        print(e)
+        print("-------------------------------------")
         sys.exit(1)
 
-    print("\nPyInstaller finished. Copying required script files...")
-
-    # 3. Copy necessary data files into the output directory
-    dist_path = os.path.join('dist', app_name)
-    proxy_script_path = 'proxy.py'
-
-    if os.path.exists(proxy_script_path):
-        print(f"Copying '{proxy_script_path}' to '{dist_path}'")
-        shutil.copy(proxy_script_path, dist_path)
-    else:
-        print(f"Warning: Could not find '{proxy_script_path}'. The bundled application may not work correctly.")
-
     print("\n--- Build process complete! ---")
-    print(f"The application is located in the '{dist_path}' folder.")
+    print(f"The application is located in the '{output_dir}' folder.")
     print("On first run, it will generate 'profiles.json' and 'rules.json' in that folder.")
 
 if __name__ == "__main__":

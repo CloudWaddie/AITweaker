@@ -28,7 +28,7 @@ jobs:
 
     - name: Zip the build output
       run: |
-        $SourceDir = "dist/AITweaker"
+        $SourceDir = "dist"
         $DestinationZip = "AITweaker-main-windows.zip"
         Compress-Archive -Path $SourceDir -DestinationPath $DestinationZip
       shell: pwsh
@@ -37,7 +37,7 @@ jobs:
         uses: actions/upload-artifact@v4
         with:
           name: AITweaker-Windows
-          path: dist/AITweaker
+          path: "dist"
 
       - name: Create Release
         id: create_release
@@ -50,4 +50,4 @@ jobs:
           name: Release ${{ github.sha }}
           draft: false
           prerelease: false
-          files: dist/AITweaker/*
+          files: "dist/*"
