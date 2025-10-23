@@ -381,7 +381,7 @@ class App(customtkinter.CTk):
         gemini_app_config["enabled"] = self.gemini_modification_switch.get() == 1
         self.save_profiles()
         self.generate_rules_json()
-        self.log_message(f"Gemini modification {'enabled' if gemini_app_config["enabled"] else 'disabled'}.\n")
+        self.log_message(f"Gemini modification {'enabled' if gemini_app_config['enabled'] else 'disabled'}.\n")
 
     # --- Copilot Methods ---
     def load_copilot_flags(self):
@@ -427,7 +427,7 @@ class App(customtkinter.CTk):
             self.save_profiles()
             self.generate_rules_json()
             self.load_copilot_flags()
-            self.log_message(f"Copilot Flag '{removed_flag['name']}' removed.\n")
+            self.log_message(f"""Copilot Flag '{removed_flag['name']}' removed.\n""")
 
     def save_copilot_changes(self):
         copilot_app_config = self.active_profile.setdefault("apps", {}).setdefault("copilot", {})
@@ -447,7 +447,7 @@ class App(customtkinter.CTk):
         copilot_app_config["enabled"] = self.copilot_modification_switch.get() == 1
         self.save_profiles()
         self.generate_rules_json()
-        self.log_message(f"Copilot modification {'enabled' if copilot_app_config["enabled"] else 'disabled'}.\n")
+        self.log_message(f"Copilot modification {'enabled' if copilot_app_config['enabled'] else 'disabled'}.\n")
 
     def toggle_copilot_beta_and_save(self):
         is_beta_enabled = self.copilot_beta_switch.get() == 1
