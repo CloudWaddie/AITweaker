@@ -1,3 +1,2 @@
 customtkinter
 mitmproxy
-PyInstaller

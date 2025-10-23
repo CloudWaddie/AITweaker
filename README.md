@@ -33,9 +33,10 @@ A desktop application to intercept and modify network requests for AI web applic
 
 ### 1. Running the Application
 
-To start the GUI, navigate to the `dist/AITweaker` folder and run the `AITweaker.exe` executable.
-
-**Note on Antivirus Detection**: Tools like PyInstaller can sometimes trigger false positives with antivirus software. This is because they package Python code into an executable, which can resemble malware behavior to some heuristic scanners. If your antivirus flags `AITweaker.exe`, please add an exception for it. The application is not a virus.
+To start the GUI, run the following command in the project's root directory:
+```sh
+python gui.py
+```
 
 ### 2. Setting up the Proxy
 
