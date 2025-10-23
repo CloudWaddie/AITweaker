@@ -38,6 +38,42 @@
                         {
                             "name": "share-invite",
                             "enabled": true
+                        },
+                        {
+                            "name": "tv-lumi",
+                            "enabled": true
+                        },
+                        {
+                            "name": "appearance-try-now-modal",
+                            "enabled": true
+                        },
+                        {
+                            "name": "character-animation-vasa",
+                            "enabled": true
+                        },
+                        {
+                            "name": "multiplecharacters",
+                            "enabled": true
+                        },
+                        {
+                            "name": "character-animation-spda2e",
+                            "enabled": true
+                        },
+                        {
+                            "name": "full-facial-animation",
+                            "enabled": true
+                        },
+                        {
+                            "name": "appr-home",
+                            "enabled": true
+                        },
+                        {
+                            "name": "appr-home-toggle",
+                            "enabled": true
+                        },
+                        {
+                            "name": "coco-mode",
+                            "enabled": true
                         }
                     ],
                     "enabled": true,

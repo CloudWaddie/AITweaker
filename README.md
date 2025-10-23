@@ -33,11 +33,9 @@ A desktop application to intercept and modify network requests for AI web applic
 
 ### 1. Running the Application
 
-To start the GUI, run:
+To start the GUI, navigate to the `dist/AITweaker` folder and run the `AITweaker.exe` executable.
 
-```sh
-python gui.py
-```
+**Note on Antivirus Detection**: Tools like PyInstaller can sometimes trigger false positives with antivirus software. This is because they package Python code into an executable, which can resemble malware behavior to some heuristic scanners. If your antivirus flags `AITweaker.exe`, please add an exception for it. The application is not a virus.
 
 ### 2. Setting up the Proxy
 
@@ -67,23 +65,7 @@ For the tool to intercept HTTPS traffic, you must set up the `mitmproxy` backend
     4.  Configure it with the Host/IP Address `127.0.0.1` and Port `8000`.
     5.  You can then enable this proxy from the extension's icon in your browser's toolbar whenever you want to use the tweaker.
 
-## Building from Source
 
-To create a distributable application folder, you can use the provided build script. This requires `pyinstaller`.
-
-1.  **Install PyInstaller**:
-    ```sh
-    pip install pyinstaller
-    ```
-
-2.  **Run the build script**:
-    ```sh
-    python build.py
-    ```
-
-3.  **Find the application**: The complete application will be located in the `dist/AITweaker` folder. This folder contains the executable and all necessary files to run.
-
----
 
 ## Support the Project
 
