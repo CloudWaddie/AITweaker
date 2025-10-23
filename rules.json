@@ -1,0 +1,22 @@
+{
+    "apps": {
+        "gemini": {
+            "enabled": true,
+            "flags": [
+                45691404,
+                45707395,
+                45715303,
+                45715396,
+                45730924
+            ]
+        },
+        "copilot": {
+            "enabled": true,
+            "flags": [
+                "share-invite",
+                "share-to-invite"
+            ],
+            "allow_beta": true
+        }
+    }
+}
