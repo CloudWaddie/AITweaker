@@ -33,21 +33,21 @@ jobs:
         Compress-Archive -Path $SourceDir -DestinationPath $DestinationZip
       shell: pwsh
 
-      - name: Upload Artifact
-        uses: actions/upload-artifact@v4
-        with:
-          name: AITweaker-Windows
-          path: dist/AITweaker
+    - name: Upload Artifact
+      uses: actions/upload-artifact@v4
+      with:
+        name: AITweaker-Windows
+        path: AITweaker-main-windows.zip # Changed to upload the zip file
 
-      - name: Create Release
-        id: create_release
-        if: github.event_name == 'push' && github.ref == 'refs/heads/main'
-        uses: softprops/action-gh-release@v1
-        env:
-          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-        with:
-          tag_name: release-${{ github.sha }}
-          name: Release ${{ github.sha }}
-          draft: false
-          prerelease: false
-          files: dist/AITweaker/*
+    - name: Create Release
+      id: create_release
+      if: github.event_name == 'push' && github.ref == 'refs/heads/main'
+      uses: softprops/action-gh-release@v1
+      env:
+        GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+      with:
+        tag_name: release-${{ github.sha }}
+        name: Release ${{ github.sha }}
+        draft: false
+        prerelease: false
+        files: AITweaker-main-windows.zip # Changed to attach the zip file to the release
