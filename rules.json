@@ -13,8 +13,17 @@
         "copilot": {
             "enabled": true,
             "flags": [
+                "appearance-try-now-modal",
+                "appr-home",
+                "appr-home-toggle",
+                "character-animation-spda2e",
+                "character-animation-vasa",
+                "coco-mode",
+                "full-facial-animation",
+                "multiplecharacters",
                 "share-invite",
-                "share-to-invite"
+                "share-to-invite",
+                "tv-lumi"
             ],
             "allow_beta": true
         }

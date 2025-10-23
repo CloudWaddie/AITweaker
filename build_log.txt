@@ -1,0 +1,7 @@
+--- Starting py2exe Build Process ---
+
+Running py2exe build for AITweaker...
+
+--- Build process complete! ---
+The application is located in the 'dist' folder.
+On first run, it will generate 'profiles.json' and 'rules.json' in that folder.
