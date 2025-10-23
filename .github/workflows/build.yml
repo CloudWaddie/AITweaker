@@ -8,6 +8,10 @@ on:
 jobs:
   build-windows:
     runs-on: windows-latest
+    
+    # Add this permissions block
+    permissions:
+      contents: write
 
     steps:
     - name: Checkout repository
@@ -37,7 +41,7 @@ jobs:
       uses: actions/upload-artifact@v4
       with:
         name: AITweaker-Windows
-        path: AITweaker-main-windows.zip # Changed to upload the zip file
+        path: AITweaker-main-windows.zip
 
     - name: Create Release
       id: create_release
@@ -50,4 +54,4 @@ jobs:
         name: Release ${{ github.sha }}
         draft: false
         prerelease: false
-        files: AITweaker-main-windows.zip # Changed to attach the zip file to the release
+        files: AITweaker-main-windows.zip
