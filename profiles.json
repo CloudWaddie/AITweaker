@@ -1,0 +1,63 @@
+{
+    "active_profile": "default",
+    "profiles": {
+        "default": {
+            "proxy_command": "mitmdump -s proxy.py -p 8000 --ssl-insecure",
+            "apps": {
+                "gemini": {
+                    "enabled": true,
+                    "flag_configs": {
+                        "45730924": {
+                            "note": "Default Tools",
+                            "enabled": true
+                        },
+                        "45691404": {
+                            "note": "Search",
+                            "enabled": true
+                        },
+                        "45707395": {
+                            "note": "Agent Mode",
+                            "enabled": true
+                        },
+                        "45715396": {
+                            "note": "Canvas Creative",
+                            "enabled": true
+                        },
+                        "45715303": {
+                            "note": "Has deep think IMO?",
+                            "enabled": true
+                        }
+                    }
+                },
+                "copilot": {
+                    "flags": [
+                        {
+                            "name": "share-to-invite",
+                            "enabled": true
+                        },
+                        {
+                            "name": "share-invite",
+                            "enabled": true
+                        }
+                    ],
+                    "enabled": true,
+                    "allow_beta": true
+                }
+            }
+        },
+        "disabled": {
+            "proxy_command": "mitmdump -s proxy.py -p 8000 --ssl-insecure",
+            "apps": {
+                "gemini": {
+                    "enabled": false,
+                    "flag_configs": {}
+                },
+                "copilot": {
+                    "enabled": false,
+                    "flags": [],
+                    "allow_beta": false
+                }
+            }
+        }
+    }
+}
