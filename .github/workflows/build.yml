@@ -8,6 +8,10 @@ on:
 jobs:
   build-windows:
     runs-on: windows-latest
+    
+    # Add this permissions block
+    permissions:
+      contents: write
 
     steps:
     - name: Checkout repository
@@ -33,21 +37,21 @@ jobs:
         Compress-Archive -Path $SourceDir -DestinationPath $DestinationZip
       shell: pwsh
 
-      - name: Upload Artifact
-        uses: actions/upload-artifact@v4
-        with:
-          name: AITweaker-Windows
-          path: "dist"
+    - name: Upload Artifact
+      uses: actions/upload-artifact@v4
+      with:
+        name: AITweaker-Windows
+        path: AITweaker-main-windows.zip
 
-      - name: Create Release
-        id: create_release
-        if: github.event_name == 'push' && github.ref == 'refs/heads/main'
-        uses: softprops/action-gh-release@v1
-        env:
-          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-        with:
-          tag_name: release-${{ github.sha }}
-          name: Release ${{ github.sha }}
-          draft: false
+    - name: Create Release
+      id: create_release
+      if: github.event_name == 'push' && github.ref == 'refs/heads/main'
+      uses: softprops/action-gh-release@v1
+      env:
+        GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+      with:
+        tag_name: release-${{ github.sha }}
+        name: Release ${{ github.sha }}
+        draft: false
           prerelease: false
-          files: "dist/*"
+          files: AITweaker-main-windows.zip
