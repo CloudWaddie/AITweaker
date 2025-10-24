@@ -1,0 +1,104 @@
+{
+    "active_profile": "GXZkEuj",
+    "profiles": {
+        "default": {
+            "proxy_command": "mitmdump -s proxy.py -p 8000",
+            "apps": {
+                "gemini": {
+                    "enabled": true,
+                    "flag_configs": {}
+                },
+                "copilot": {
+                    "enabled": true,
+                    "flags": [],
+                    "allow_beta": true
+                }
+            }
+        },
+        "GXZkEuj": {
+            "proxy_command": "mitmdump -s proxy.py -p 8000 --ssl-insecure",
+            "apps": {
+                "gemini": {
+                    "enabled": true,
+                    "flag_configs": {
+                        "45730924": {
+                            "note": "Default Tools",
+                            "enabled": true
+                        },
+                        "45691404": {
+                            "note": "Search",
+                            "enabled": true
+                        },
+                        "45707395": {
+                            "note": "Agent Mode",
+                            "enabled": true
+                        },
+                        "45715396": {
+                            "note": "Canvas Creative",
+                            "enabled": true
+                        },
+                        "45715303": {
+                            "note": "Has deep think IMO?",
+                            "enabled": true
+                        }
+                    }
+                },
+                "copilot": {
+                    "flags": [
+                        {
+                            "name": "share-to-invite",
+                            "enabled": true
+                        },
+                        {
+                            "name": "share-invite",
+                            "enabled": true
+                        },
+                        {
+                            "name": "tv-lumi",
+                            "enabled": true
+                        },
+                        {
+                            "name": "appearance-try-now-modal",
+                            "enabled": true
+                        },
+                        {
+                            "name": "character-animation-vasa",
+                            "enabled": true
+                        },
+                        {
+                            "name": "multiplecharacters",
+                            "enabled": true
+                        },
+                        {
+                            "name": "character-animation-spda2e",
+                            "enabled": true
+                        },
+                        {
+                            "name": "full-facial-animation",
+                            "enabled": true
+                        },
+                        {
+                            "name": "appr-home",
+                            "enabled": true
+                        },
+                        {
+                            "name": "appr-home-toggle",
+                            "enabled": true
+                        },
+                        {
+                            "name": "coco-mode",
+                            "enabled": true
+                        }
+                    ],
+                    "enabled": true,
+                    "allow_beta": true
+                },
+                "google_labs": {
+                    "enabled": true,
+                    "music_fx_replace": "bottle",
+                    "bypass_not_found": true
+                }
+            }
+        }
+    }
+}
