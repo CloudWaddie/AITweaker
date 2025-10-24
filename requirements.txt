@@ -1,2 +1,4 @@
 customtkinter
 mitmproxy
+pystray
+Pillow

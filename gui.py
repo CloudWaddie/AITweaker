@@ -14,7 +14,7 @@ class App(customtkinter.CTk):
 
         self.title("AI Leaks Tweaker")
         self.geometry("500x550")
-        self.protocol("WM_DELETE_WINDOW", self.on_closing)
+        self.protocol("WM_DELETE_WINDOW", self.quit_app)
 
         self.grid_columnconfigure(0, weight=1)
         self.grid_rowconfigure(1, weight=1)
@@ -27,6 +27,7 @@ class App(customtkinter.CTk):
         self.proxy_tab = self.tab_view.add("Proxy")
         self.gemini_tab = self.tab_view.add("Gemini")
         self.copilot_tab = self.tab_view.add("Copilot")
+        self.google_labs_tab = self.tab_view.add("Google Labs")
 
         # --- Proxy Tab ---
         self.proxy_tab.grid_columnconfigure(0, weight=1)
@@ -108,6 +109,24 @@ class App(customtkinter.CTk):
         self.copilot_save_changes_button = customtkinter.CTkButton(self.copilot_tab, text="Save Copilot Changes", command=self.save_copilot_changes)
         self.copilot_save_changes_button.grid(row=5, column=0, padx=10, pady=5, sticky="ew")
 
+        # --- Google Labs Tab ---
+        self.google_labs_tab.grid_columnconfigure(0, weight=1)
+
+        self.google_labs_modification_switch = customtkinter.CTkSwitch(self.google_labs_tab, text="Enable Google Labs Modifications", command=self.toggle_google_labs_modification)
+        self.google_labs_modification_switch.grid(row=0, column=0, padx=10, pady=10, sticky="w")
+
+        self.music_fx_replace_label = customtkinter.CTkLabel(self.google_labs_tab, text="Replace MusicFX with:")
+        self.music_fx_replace_label.grid(row=1, column=0, padx=10, pady=5, sticky="w")
+
+        self.music_fx_replace_menu = customtkinter.CTkOptionMenu(self.google_labs_tab, values=["None", "bottle"])
+        self.music_fx_replace_menu.grid(row=2, column=0, padx=10, pady=5, sticky="ew")
+
+        self.google_labs_save_button = customtkinter.CTkButton(self.google_labs_tab, text="Save Google Labs Changes", command=self.save_google_labs_changes)
+        self.google_labs_save_button.grid(row=4, column=0, padx=10, pady=10, sticky="ew")
+
+        self.bypass_not_found_switch = customtkinter.CTkSwitch(self.google_labs_tab, text="Bypass 'notFound' errors")
+        self.bypass_not_found_switch.grid(row=3, column=0, padx=10, pady=10, sticky="w")
+
         # --- Load Data ---
         self.proxy_process = None
         self.gemini_flag_widgets = {}
@@ -152,7 +171,8 @@ class App(customtkinter.CTk):
                         "proxy_command": "mitmdump -s proxy.py -p 8000",
                         "apps": {
                             "gemini": {"enabled": True, "flag_configs": {}},
-                            "copilot": {"enabled": True, "flags": [], "allow_beta": False}
+                            "copilot": {"enabled": True, "flags": [], "allow_beta": False},
+                            "google_labs": {"enabled": True, "music_fx_replace": "None", "bypass_not_found": False}
                         }
                     }
                 }
@@ -206,6 +226,18 @@ class App(customtkinter.CTk):
             self.copilot_beta_switch.select()
         else:
             self.copilot_beta_switch.deselect()
+
+        google_labs_app_config = self.active_profile.setdefault("apps", {}).setdefault("google_labs", {})
+        if google_labs_app_config.get("enabled", True):
+            self.google_labs_modification_switch.select()
+        else:
+            self.google_labs_modification_switch.deselect()
+        self.music_fx_replace_menu.set(google_labs_app_config.get("music_fx_replace", "None"))
+        if google_labs_app_config.get("bypass_not_found", False):
+            self.bypass_not_found_switch.select()
+        else:
+            self.bypass_not_found_switch.deselect()
+            
         self.load_gemini_flags()
         self.load_copilot_flags()
 
@@ -225,7 +257,8 @@ class App(customtkinter.CTk):
                 "proxy_command": "mitmdump -s proxy.py -p 8000",
                 "apps": {
                     "gemini": {"enabled": True, "flag_configs": {}},
-                    "copilot": {"enabled": True, "flags": [], "allow_beta": False}
+                    "copilot": {"enabled": True, "flags": [], "allow_beta": False},
+                    "google_labs": {"enabled": True, "music_fx_replace": "None", "bypass_not_found": False}
                 }
             }
             self.switch_profile(new_name)
@@ -298,11 +331,15 @@ class App(customtkinter.CTk):
                     "flags": sorted(enabled_flags),
                     "allow_beta": copilot_config.get("allow_beta", False)
                 }
+            if "google_labs" in self.active_profile["apps"]:
+                apps_for_backend["google_labs"] = self.active_profile["apps"]["google_labs"]
+
         with open("rules.json", "w") as f: json.dump({"apps": apps_for_backend}, f, indent=4)
         self.restart_proxy_if_running()
 
-    def on_closing(self):
-        if self.proxy_process and self.proxy_process.poll() is None: self.proxy_process.terminate()
+    def quit_app(self):
+        if self.proxy_process and self.proxy_process.poll() is None:
+            self.proxy_process.terminate()
         self.destroy()
 
     # --- Gemini Methods ---
@@ -427,7 +464,7 @@ class App(customtkinter.CTk):
             self.save_profiles()
             self.generate_rules_json()
             self.load_copilot_flags()
-            self.log_message(f"""Copilot Flag '{removed_flag['name']}' removed.\n""")
+            self.log_message(f'''Copilot Flag '{removed_flag['name']}' removed.\n''')
 
     def save_copilot_changes(self):
         copilot_app_config = self.active_profile.setdefault("apps", {}).setdefault("copilot", {})
@@ -457,9 +494,26 @@ class App(customtkinter.CTk):
         self.generate_rules_json()
         self.log_message(f"Copilot 'allowBeta' set to {is_beta_enabled}.\n")
 
+    # --- Google Labs Methods ---
+    def toggle_google_labs_modification(self):
+        google_labs_app_config = self.active_profile.setdefault("apps", {}).setdefault("google_labs", {})
+        google_labs_app_config["enabled"] = self.google_labs_modification_switch.get() == 1
+        self.save_profiles()
+        self.generate_rules_json()
+        self.log_message(f"Google Labs modification {'enabled' if google_labs_app_config['enabled'] else 'disabled'}.\n")
+
+    def save_google_labs_changes(self):
+        google_labs_app_config = self.active_profile.setdefault("apps", {}).setdefault("google_labs", {})
+        google_labs_app_config["enabled"] = self.google_labs_modification_switch.get() == 1
+        google_labs_app_config["music_fx_replace"] = self.music_fx_replace_menu.get()
+        google_labs_app_config["bypass_not_found"] = self.bypass_not_found_switch.get() == 1
+        self.save_profiles()
+        self.generate_rules_json()
+        self.log_message(f"Google Labs changes saved to profile: '{self.active_profile_name}'\n")
+
     # --- Generic Methods ---
     def toggle_proxy(self):
-        if self.proxy_process and self.proxy_process.poll() is None: self.stop_proxy()
+        if self.proxy_process and self.proxy_process.poll() is None: self.stop_proxy() 
         else: self.start_proxy()
 
     def start_proxy(self):
@@ -498,7 +552,4 @@ class App(customtkinter.CTk):
 
 if __name__ == "__main__":
     app = App()
-    def cleanup():
-        if app.proxy_process and app.proxy_process.poll() is None: app.proxy_process.terminate(); print("Mitmproxy process terminated on exit.")
-    atexit.register(cleanup)
     app.mainloop()
