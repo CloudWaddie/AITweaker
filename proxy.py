@@ -7,6 +7,8 @@ class AITweaker:
         self.rules = {}
         self.gemini_url_pattern = re.compile(r'^https?:\/\/www\.gstatic\.com\/.*m=_b(\?.*)?$', re.S)
         self.copilot_url_pattern = re.compile(r'^https?:\/\/copilot\.microsoft\.com\/c\/api\/start.*')
+        self.google_labs_url_pattern = re.compile(r'^https?:\/\/labs\.google\/fx\/_next\/static\/chunks\/pages\/index-.*\.js')
+        self.google_labs_json_pattern = re.compile(r'^https?:\/\/labs\.google\/fx\/_next\/data\/.*\.json(\?.*)?$')
 
     def load_rules(self):
         try:
@@ -81,6 +83,64 @@ class AITweaker:
         except Exception as e:
             ctx.log.error(f"Error modifying Copilot response: {e}")
 
+    def modify_google_labs_script(self, flow: http.HTTPFlow):
+        google_labs_config = self.rules.get("apps", {}).get("google_labs", {})
+        if not google_labs_config.get("enabled", False):
+            return
+
+        replacement = google_labs_config.get("music_fx_replace", "None")
+        if replacement == "None":
+            return
+
+        try:
+            script = flow.response.get_text()
+            # Replace the link for MusicFX
+            original_link = "/tools/music-fx"
+            new_link = f"/tools/{replacement}"
+            
+            # The script is minified, so we need to be careful
+            # Looking for: 'link':'/tools/music-fx' or "link":"/tools/music-fx"
+            old_code_single = f"'link':'{original_link}'"
+            new_code_single = f"'link':'{new_link}'"
+            old_code_double = f'"link":"{original_link}"'
+            new_code_double = f'"link":"{new_link}"'
+
+            if old_code_single in script:
+                flow.response.text = script.replace(old_code_single, new_code_single)
+                ctx.log.info(f"proxy.py: Replaced MusicFX link with {new_link}.")
+            elif old_code_double in script:
+                flow.response.text = script.replace(old_code_double, new_code_double)
+                ctx.log.info(f"proxy.py: Replaced MusicFX link with {new_link}.")
+            else:
+                ctx.log.info("proxy.py: Target for MusicFX link replacement not found.")
+
+        except Exception as e:
+            ctx.log.error(f"Error during Google Labs script modification: {e}")
+
+    def modify_json_response(self, flow: http.HTTPFlow):
+        google_labs_config = self.rules.get("apps", {}).get("google_labs", {})
+        if not google_labs_config.get("enabled", False) or not google_labs_config.get("bypass_not_found", False):
+            return
+        
+        if flow.response and "application/json" in flow.response.headers.get("content-type", ""):
+            if flow.response.text == '{"notFound":true}':
+                flow.response.text = '{"notFound":false}'
+                ctx.log.info("proxy.py: Bypassed notFound=true.")
+
+        if flow.response.status_code == 404 and re.match(r"^https://labs\.google/fx/_next/data/.*\.json(\?.*)?$", flow.request.url):
+            flow.response.status_code = 200
+            flow.response.text = '{"notFound":false}'
+            flow.response.headers["Content-Type"] = "application/json"
+            ctx.log.info(f"proxy.py: Overwrote 404 response for {flow.request.pretty_url}")
+
+    def request(self, flow: http.HTTPFlow) -> None:
+        self.load_rules()
+        google_labs_config = self.rules.get("apps", {}).get("google_labs", {})
+        if google_labs_config.get("bypass_not_found", False):
+            if flow.request.method == "HEAD" and re.match(r"^https://labs\.google/fx/_next/data/.*\.json(\?.*)?$", flow.request.url):
+                flow.request.method = "GET"
+                ctx.log.info(f"proxy.py: Converted HEAD request to GET for {flow.request.pretty_url}")
+
     def response(self, flow: http.HTTPFlow) -> None:
         self.load_rules()
         
@@ -89,6 +149,11 @@ class AITweaker:
         
         if self.copilot_url_pattern.match(flow.request.url):
             self.modify_copilot_response(flow)
+
+        if self.google_labs_url_pattern.match(flow.request.url) or self.google_labs_json_pattern.match(flow.request.url):
+            self.modify_google_labs_script(flow)
+
+        self.modify_json_response(flow)
 
 addons = [
     AITweaker()
