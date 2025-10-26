@@ -84,8 +84,25 @@ class App(customtkinter.CTk):
         self.gemini_add_flag_button = customtkinter.CTkButton(self.gemini_tab, text="Add Flag", command=self.add_gemini_flag)
         self.gemini_add_flag_button.grid(row=4, column=0, padx=10, pady=5, sticky="ew")
 
+        self.gemini_add_range_frame = customtkinter.CTkFrame(self.gemini_tab)
+        self.gemini_add_range_frame.grid(row=5, column=0, padx=10, pady=5, sticky="ew")
+        self.gemini_add_range_frame.grid_columnconfigure(0, weight=1)
+        self.gemini_add_range_frame.grid_columnconfigure(1, weight=1)
+
+        self.gemini_start_range_entry = customtkinter.CTkEntry(self.gemini_add_range_frame, placeholder_text="Start of range")
+        self.gemini_start_range_entry.grid(row=0, column=0, padx=(0, 5), pady=5, sticky="ew")
+
+        self.gemini_end_range_entry = customtkinter.CTkEntry(self.gemini_add_range_frame, placeholder_text="End of range")
+        self.gemini_end_range_entry.grid(row=0, column=1, padx=5, pady=5, sticky="ew")
+
+        self.gemini_add_range_button = customtkinter.CTkButton(self.gemini_add_range_frame, text="Add Range", command=self.add_gemini_range)
+        self.gemini_add_range_button.grid(row=0, column=2, padx=(5, 0), pady=5)
+
+        self.gemini_binary_search_button = customtkinter.CTkButton(self.gemini_tab, text="Binary Search for Flag", command=self.open_binary_search_window)
+        self.gemini_binary_search_button.grid(row=6, column=0, padx=10, pady=5, sticky="ew")
+
         self.gemini_save_changes_button = customtkinter.CTkButton(self.gemini_tab, text="Save Gemini Changes", command=self.save_gemini_changes)
-        self.gemini_save_changes_button.grid(row=5, column=0, padx=10, pady=5, sticky="ew")
+        self.gemini_save_changes_button.grid(row=7, column=0, padx=10, pady=5, sticky="ew")
 
         # --- Copilot Tab ---
         self.copilot_tab.grid_columnconfigure(0, weight=1)
@@ -115,11 +132,11 @@ class App(customtkinter.CTk):
         self.google_labs_modification_switch = customtkinter.CTkSwitch(self.google_labs_tab, text="Enable Google Labs Modifications", command=self.toggle_google_labs_modification)
         self.google_labs_modification_switch.grid(row=0, column=0, padx=10, pady=10, sticky="w")
 
-        self.music_fx_replace_label = customtkinter.CTkLabel(self.google_labs_tab, text="Replace MusicFX with:")
+        self.music_fx_replace_label = customtkinter.CTkLabel(self.google_labs_tab, text="Replace MusicFX URL:")
         self.music_fx_replace_label.grid(row=1, column=0, padx=10, pady=5, sticky="w")
 
-        self.music_fx_replace_menu = customtkinter.CTkOptionMenu(self.google_labs_tab, values=["None", "bottle"])
-        self.music_fx_replace_menu.grid(row=2, column=0, padx=10, pady=5, sticky="ew")
+        self.music_fx_replace_entry = customtkinter.CTkEntry(self.google_labs_tab, placeholder_text="Enter URL (e.g., http://example.com)")
+        self.music_fx_replace_entry.grid(row=2, column=0, padx=10, pady=5, sticky="ew")
 
         self.google_labs_save_button = customtkinter.CTkButton(self.google_labs_tab, text="Save Google Labs Changes", command=self.save_google_labs_changes)
         self.google_labs_save_button.grid(row=4, column=0, padx=10, pady=10, sticky="ew")
@@ -128,6 +145,7 @@ class App(customtkinter.CTk):
         self.bypass_not_found_switch.grid(row=3, column=0, padx=10, pady=10, sticky="w")
 
         # --- Load Data ---
+        self.log_listeners = []
         self.proxy_process = None
         self.gemini_flag_widgets = {}
         self.copilot_flag_widgets = {}
@@ -232,7 +250,8 @@ class App(customtkinter.CTk):
             self.google_labs_modification_switch.select()
         else:
             self.google_labs_modification_switch.deselect()
-        self.music_fx_replace_menu.set(google_labs_app_config.get("music_fx_replace", "None"))
+        self.music_fx_replace_entry.delete(0, "end")
+        self.music_fx_replace_entry.insert(0, google_labs_app_config.get("music_fx_replace", "None"))
         if google_labs_app_config.get("bypass_not_found", False):
             self.bypass_not_found_switch.select()
         else:
@@ -321,8 +340,21 @@ class App(customtkinter.CTk):
         if "apps" in self.active_profile:
             if "gemini" in self.active_profile["apps"]:
                 gemini_config = self.active_profile["apps"]["gemini"]
-                enabled_flags = [int(id) for id, cfg in gemini_config.get("flag_configs", {}).items() if cfg.get("enabled", True)]
-                apps_for_backend["gemini"] = {"enabled": gemini_config.get("enabled", True), "flags": sorted(enabled_flags)}
+
+                def sort_key(item):
+                    key_part = item.split('-')[0]
+                    return int(key_part)
+
+                enabled_flags_configs = {k: v for k, v in gemini_config.get("flag_configs", {}).items() if v.get("enabled", True)}
+                
+                enabled_flags = []
+                for id in sorted(enabled_flags_configs.keys(), key=sort_key):
+                    if '-' in id:
+                        enabled_flags.append(id)
+                    else:
+                        enabled_flags.append(int(id))
+
+                apps_for_backend["gemini"] = {"enabled": gemini_config.get("enabled", True), "flags": enabled_flags}
             if "copilot" in self.active_profile["apps"]:
                 copilot_config = self.active_profile["apps"]["copilot"]
                 enabled_flags = [f["name"] for f in copilot_config.get("flags", []) if f.get("enabled", True)]
@@ -349,8 +381,13 @@ class App(customtkinter.CTk):
         self.gemini_flag_widgets = {}
         gemini_app_config = self.active_profile.setdefault("apps", {}).setdefault("gemini", {})
         flag_configs = gemini_app_config.setdefault("flag_configs", {})
-        for flag_id_str, config in sorted(flag_configs.items(), key=lambda item: int(item[0])):
-            flag_id = int(flag_id_str)
+        self.log_message(f"Loading flags: {flag_configs}\n")
+
+        def sort_key(item):
+            key_part = item[0].split('-')[0]
+            return int(key_part)
+
+        for flag_id_str, config in sorted(flag_configs.items(), key=sort_key):
             note, enabled = config.get("note", ""), config.get("enabled", True)
             flag_frame = customtkinter.CTkFrame(self.gemini_flags_list_frame)
             flag_frame.pack(fill="x", padx=5, pady=2)
@@ -360,35 +397,81 @@ class App(customtkinter.CTk):
                 switch.select()
             else:
                 switch.deselect()
-            flag_label = customtkinter.CTkLabel(flag_frame, text=str(flag_id))
+            flag_label = customtkinter.CTkLabel(flag_frame, text=flag_id_str)
             flag_label.pack(side="left", padx=5)
             note_entry = customtkinter.CTkEntry(flag_frame, placeholder_text="Note...")
             note_entry.insert(0, note)
             note_entry.pack(side="left", padx=5, fill="x", expand=True)
-            delete_button = customtkinter.CTkButton(flag_frame, text="X", width=30, command=lambda f=flag_id: self.remove_gemini_flag(f))
+            delete_button = customtkinter.CTkButton(flag_frame, text="X", width=30, command=lambda f=flag_id_str: self.remove_gemini_flag(f))
             delete_button.pack(side="right", padx=5)
-            self.gemini_flag_widgets[flag_id] = {"note_entry": note_entry, "switch": switch, "frame": flag_frame}
+            self.gemini_flag_widgets[flag_id_str] = {"note_entry": note_entry, "switch": switch, "frame": flag_frame}
         self.filter_gemini_flags()
 
-    def add_gemini_flag(self):
-        flag_to_add_str = self.gemini_add_flag_entry.get()
-        if flag_to_add_str and flag_to_add_str.isdigit():
-            gemini_app_config = self.active_profile.setdefault("apps", {}).setdefault("gemini", {})
-            flag_configs = gemini_app_config.setdefault("flag_configs", {})
-            if flag_to_add_str not in flag_configs:
-                flag_configs[flag_to_add_str] = {"note": "", "enabled": True}
-                self.save_profiles()
-                self.generate_rules_json()
-                self.load_gemini_flags()
-                self.gemini_add_flag_entry.delete(0, "end")
-                self.log_message(f"Gemini Flag '{flag_to_add_str}' added.\n")
+    def add_gemini_range(self):
+        start_range = self.gemini_start_range_entry.get()
+        end_range = self.gemini_end_range_entry.get()
 
-    def remove_gemini_flag(self, flag_to_remove):
-        flag_to_remove_str = str(flag_to_remove)
+        if not start_range or not end_range:
+            self.log_message("Error: Start and end of range cannot be empty.\n")
+            return
+
+        if not start_range.isdigit() or not end_range.isdigit():
+            self.log_message("Error: Range start and end must be numbers.\n")
+            return
+        
+        if int(start_range) >= int(end_range):
+            self.log_message("Error: Start of range must be less than end of range.\n")
+            return
+
+        flag_to_add = f"{start_range}-{end_range}"
+
         gemini_app_config = self.active_profile.setdefault("apps", {}).setdefault("gemini", {})
         flag_configs = gemini_app_config.setdefault("flag_configs", {})
-        if flag_to_remove_str in flag_configs:
-            del flag_configs[flag_to_remove_str]
+        
+        if flag_to_add not in flag_configs:
+            flag_configs[flag_to_add] = {"note": "", "enabled": True}
+            self.save_profiles()
+            self.generate_rules_json()
+            self.load_gemini_flags()
+            self.gemini_start_range_entry.delete(0, "end")
+            self.gemini_end_range_entry.delete(0, "end")
+            self.log_message(f"Gemini Flag Range '{flag_to_add}' added.\n")
+        else:
+            self.log_message(f"Error: Flag '{flag_to_add}' already exists.\n")
+
+    def add_gemini_flag(self):
+        flag_to_add = self.gemini_add_flag_entry.get()
+        if not flag_to_add:
+            return
+
+        # Validate the input
+        is_valid_range = False
+        if '-' in flag_to_add:
+            parts = flag_to_add.split('-')
+            if len(parts) == 2 and parts[0].isdigit() and parts[1].isdigit() and int(parts[0]) < int(parts[1]):
+                is_valid_range = True
+        
+        if not is_valid_range and not flag_to_add.isdigit():
+            self.log_message(f"Error: Invalid flag or range: {flag_to_add}\n")
+            return
+
+        gemini_app_config = self.active_profile.setdefault("apps", {}).setdefault("gemini", {})
+        flag_configs = gemini_app_config.setdefault("flag_configs", {})
+        self.log_message(f"Before add: {flag_configs}\n")
+        if flag_to_add not in flag_configs:
+            flag_configs[flag_to_add] = {"note": "", "enabled": True}
+            self.log_message(f"After add: {flag_configs}\n")
+            self.save_profiles()
+            self.generate_rules_json()
+            self.load_gemini_flags()
+            self.gemini_add_flag_entry.delete(0, "end")
+            self.log_message(f"Gemini Flag '{flag_to_add}' added.\n")
+
+    def remove_gemini_flag(self, flag_to_remove):
+        gemini_app_config = self.active_profile.setdefault("apps", {}).setdefault("gemini", {})
+        flag_configs = gemini_app_config.setdefault("flag_configs", {})
+        if flag_to_remove in flag_configs:
+            del flag_configs[flag_to_remove]
             self.save_profiles()
             self.generate_rules_json()
             self.load_gemini_flags()
@@ -419,6 +502,8 @@ class App(customtkinter.CTk):
         self.save_profiles()
         self.generate_rules_json()
         self.log_message(f"Gemini modification {'enabled' if gemini_app_config['enabled'] else 'disabled'}.\n")
+
+
 
     # --- Copilot Methods ---
     def load_copilot_flags(self):
@@ -505,7 +590,7 @@ class App(customtkinter.CTk):
     def save_google_labs_changes(self):
         google_labs_app_config = self.active_profile.setdefault("apps", {}).setdefault("google_labs", {})
         google_labs_app_config["enabled"] = self.google_labs_modification_switch.get() == 1
-        google_labs_app_config["music_fx_replace"] = self.music_fx_replace_menu.get()
+        google_labs_app_config["music_fx_replace"] = self.music_fx_replace_entry.get()
         google_labs_app_config["bypass_not_found"] = self.bypass_not_found_switch.get() == 1
         self.save_profiles()
         self.generate_rules_json()
@@ -547,8 +632,147 @@ class App(customtkinter.CTk):
 
     def log_message(self, message):
         def _log():
-            self.log_textbox.configure(state="normal"); self.log_textbox.insert("end", message); self.log_textbox.see("end"); self.log_textbox.configure(state="disabled")
+            self.log_textbox.configure(state="normal")
+            self.log_textbox.insert("end", message)
+            self.log_textbox.see("end")
+            self.log_textbox.configure(state="disabled")
+            for listener in self.log_listeners:
+                listener(message)
         self.after(0, _log)
+
+    def open_binary_search_window(self):
+        if not hasattr(self, "binary_search_window") or not self.binary_search_window.winfo_exists():
+            self.binary_search_window = BinarySearchWindow(self)
+            self.binary_search_window.focus()
+        else:
+            self.binary_search_window.focus()
+
+    def set_gemini_flags(self, flags_list):
+        gemini_app_config = self.active_profile.setdefault("apps", {}).setdefault("gemini", {})
+        flag_configs = {}
+        for flag in flags_list:
+            flag_configs[str(flag)] = {"note": "Binary Search", "enabled": True}
+        gemini_app_config["flag_configs"] = flag_configs
+        self.save_profiles()
+        self.generate_rules_json()
+        self.load_gemini_flags()
+
+class BinarySearchWindow(customtkinter.CTkToplevel):
+    def __init__(self, master_app):
+        super().__init__(master_app)
+        self.app = master_app
+        self.title("Gemini Flag Binary Search")
+        self.geometry("450x350")
+        self.protocol("WM_DELETE_WINDOW", self.on_close)
+
+        self.grid_columnconfigure(0, weight=1)
+        self.grid_columnconfigure(1, weight=1)
+
+        # Search range
+        self.range_frame = customtkinter.CTkFrame(self)
+        self.range_frame.grid(row=0, column=0, columnspan=2, padx=10, pady=10, sticky="ew")
+        self.range_frame.grid_columnconfigure(0, weight=1)
+        self.range_frame.grid_columnconfigure(1, weight=1)
+        self.min_entry = customtkinter.CTkEntry(self.range_frame, placeholder_text="Min Flag ID")
+        self.min_entry.grid(row=0, column=0, padx=5, pady=5, sticky="ew")
+        self.max_entry = customtkinter.CTkEntry(self.range_frame, placeholder_text="Max Flag ID")
+        self.max_entry.grid(row=0, column=1, padx=5, pady=5, sticky="ew")
+        self.start_button = customtkinter.CTkButton(self.range_frame, text="Start Search", command=self.start_search)
+        self.start_button.grid(row=1, column=0, columnspan=2, padx=5, pady=5, sticky="ew")
+
+        # Search status
+        self.status_label = customtkinter.CTkLabel(self, text="Enter a range and start the search.", wraplength=400)
+        self.status_label.grid(row=1, column=0, columnspan=2, padx=10, pady=10)
+
+        # User feedback
+        self.feedback_frame = customtkinter.CTkFrame(self)
+        self.feedback_frame.grid(row=2, column=0, columnspan=2, padx=10, pady=10, sticky="ew")
+        self.feedback_frame.grid_columnconfigure(0, weight=1)
+        self.feedback_frame.grid_columnconfigure(1, weight=1)
+        self.question_label = customtkinter.CTkLabel(self.feedback_frame, text="Is the feature present?")
+        self.question_label.grid(row=0, column=0, columnspan=2, padx=5, pady=5)
+        self.yes_button = customtkinter.CTkButton(self.feedback_frame, text="Yes", command=self.found_feature, state="disabled")
+        self.yes_button.grid(row=1, column=0, padx=5, pady=5, sticky="ew")
+        self.no_button = customtkinter.CTkButton(self.feedback_frame, text="No", command=self.not_found_feature, state="disabled")
+        self.no_button.grid(row=1, column=1, padx=5, pady=5, sticky="ew")
+
+        # Instructions
+        self.cache_label = customtkinter.CTkLabel(self, text="Remember to do a hard refresh (Ctrl+Shift+R or Cmd+Shift+R) after each step.", wraplength=400)
+        self.cache_label.grid(row=3, column=0, columnspan=2, padx=10, pady=10)
+        
+        self.low = 0
+        self.high = 0
+        self.mid = 0
+        self.original_flags = {}
+        self.searching = False
+
+    def start_search(self):
+        min_val = self.min_entry.get()
+        max_val = self.max_entry.get()
+        if not min_val.isdigit() or not max_val.isdigit() or int(min_val) >= int(max_val):
+            self.status_label.configure(text="Invalid range. Please enter valid numbers with min < max.")
+            return
+        
+        self.low = int(min_val)
+        self.high = int(max_val)
+        self.original_flags = self.app.active_profile.get("apps", {}).get("gemini", {}).get("flag_configs", {}).copy()
+        
+        self.app.log_listeners.append(self.on_log_message)
+        self.searching = True
+        self.start_button.configure(state="disabled")
+        self.next_step()
+
+    def next_step(self):
+        if self.low > self.high:
+            self.status_label.configure(text=f"Search failed. Range is empty. Last tested range was {self.low}-{self.high}")
+            self.stop_search()
+            return
+
+        if self.low == self.high:
+            self.status_label.configure(text=f"Found flag: {self.low}\nSearch complete. Restoring original flags.")
+            self.stop_search()
+            return
+
+        self.mid = (self.low + self.high) // 2
+        test_range = f"{self.low}-{self.mid}"
+        
+        self.app.set_gemini_flags([test_range])
+        
+        self.status_label.configure(text=f"Testing range: {test_range}\nWaiting for Gemini script load...")
+        self.yes_button.configure(state="disabled")
+        self.no_button.configure(state="disabled")
+
+    def on_log_message(self, message):
+        if self.searching and "proxy.py: Injected Gemini flags into script." in message:
+            self.status_label.configure(text=f"Script loaded with range {self.low}-{self.mid}.\nIs the feature present?")
+            self.yes_button.configure(state="normal")
+            self.no_button.configure(state="normal")
+
+    def found_feature(self): # Yes
+        self.high = self.mid
+        self.next_step()
+
+    def not_found_feature(self): # No
+        self.low = self.mid + 1
+        self.next_step()
+
+    def stop_search(self):
+        if self.searching:
+            if self.on_log_message in self.app.log_listeners:
+                self.app.log_listeners.remove(self.on_log_message)
+            self.searching = False
+            gemini_app_config = self.app.active_profile.setdefault("apps", {}).setdefault("gemini", {})
+            gemini_app_config["flag_configs"] = self.original_flags
+            self.app.save_profiles()
+            self.app.generate_rules_json()
+            self.app.load_gemini_flags()
+        self.start_button.configure(state="normal")
+        self.yes_button.configure(state="disabled")
+        self.no_button.configure(state="disabled")
+
+    def on_close(self):
+        self.stop_search()
+        self.destroy()
 
 if __name__ == "__main__":
     app = App()
