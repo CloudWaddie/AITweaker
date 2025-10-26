@@ -1,10 +1,14 @@
-Traceback (most recent call last):
-  File "mitmproxy\addons\script.py", line 38, in load_script
-  File "<frozen importlib._bootstrap_external>", line 1022, in exec_module
-  File "<frozen importlib._bootstrap_external>", line 1160, in get_code
-  File "<frozen importlib._bootstrap_external>", line 1090, in source_to_code
-  File "<frozen importlib._bootstrap>", line 488, in _call_with_frames_removed
-  File "proxy.py", line 110
-    obj_regex = re.compile(r'(\{[^{}]*?['|"]link['|"]\s*:\s*['|"]/tools/music-fx['|"][^{}]*?\})')
-                                                    ^
-SyntaxError: closing parenthesis ']' does not match opening parenthesis '('
+Run softprops/action-gh-release@v1
+👩‍🏭 Creating new GitHub release for tag release-2025-10-26-04-42...
+⚠️ GitHub release failed with status: 403
+undefined
+retrying... (2 retries remaining)
+👩‍🏭 Creating new GitHub release for tag release-2025-10-26-04-42...
+⚠️ GitHub release failed with status: 403
+undefined
+retrying... (1 retries remaining)
+👩‍🏭 Creating new GitHub release for tag release-2025-10-26-04-42...
+⚠️ GitHub release failed with status: 403
+undefined
+retrying... (0 retries remaining)
+❌ Too many retries. Aborting...
