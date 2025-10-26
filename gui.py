@@ -132,17 +132,20 @@ class App(customtkinter.CTk):
         self.google_labs_modification_switch = customtkinter.CTkSwitch(self.google_labs_tab, text="Enable Google Labs Modifications", command=self.toggle_google_labs_modification)
         self.google_labs_modification_switch.grid(row=0, column=0, padx=10, pady=10, sticky="w")
 
-        self.music_fx_replace_label = customtkinter.CTkLabel(self.google_labs_tab, text="Replace MusicFX URL:")
+        self.music_fx_replace_label = customtkinter.CTkLabel(self.google_labs_tab, text="Replace MusicFX Homepage Link:")
         self.music_fx_replace_label.grid(row=1, column=0, padx=10, pady=5, sticky="w")
 
-        self.music_fx_replace_entry = customtkinter.CTkEntry(self.google_labs_tab, placeholder_text="Enter URL (e.g., http://example.com)")
+        self.music_fx_replace_entry = customtkinter.CTkEntry(self.google_labs_tab, placeholder_text="e.g., debug or notebook")
         self.music_fx_replace_entry.grid(row=2, column=0, padx=10, pady=5, sticky="ew")
-
-        self.google_labs_save_button = customtkinter.CTkButton(self.google_labs_tab, text="Save Google Labs Changes", command=self.save_google_labs_changes)
-        self.google_labs_save_button.grid(row=4, column=0, padx=10, pady=10, sticky="ew")
+        
+        self.music_fx_replace_desc = customtkinter.CTkLabel(self.google_labs_tab, text="Replaces the '/tools/music-fx' link with your own path (e.g., /debug).", text_color="gray", font=("", 11))
+        self.music_fx_replace_desc.grid(row=3, column=0, padx=10, pady=(0,5), sticky="w")
 
         self.bypass_not_found_switch = customtkinter.CTkSwitch(self.google_labs_tab, text="Bypass 'notFound' errors")
-        self.bypass_not_found_switch.grid(row=3, column=0, padx=10, pady=10, sticky="w")
+        self.bypass_not_found_switch.grid(row=4, column=0, padx=10, pady=10, sticky="w")
+
+        self.google_labs_save_button = customtkinter.CTkButton(self.google_labs_tab, text="Save Google Labs Changes", command=self.save_google_labs_changes)
+        self.google_labs_save_button.grid(row=5, column=0, padx=10, pady=10, sticky="ew")
 
         # --- Load Data ---
         self.log_listeners = []
@@ -590,7 +593,7 @@ class App(customtkinter.CTk):
     def save_google_labs_changes(self):
         google_labs_app_config = self.active_profile.setdefault("apps", {}).setdefault("google_labs", {})
         google_labs_app_config["enabled"] = self.google_labs_modification_switch.get() == 1
-        google_labs_app_config["music_fx_replace"] = self.music_fx_replace_entry.get()
+        google_labs_app_config["music_fx_replace"] = self.music_fx_replace_entry.get().lstrip('/')
         google_labs_app_config["bypass_not_found"] = self.bypass_not_found_switch.get() == 1
         self.save_profiles()
         self.generate_rules_json()
@@ -662,8 +665,9 @@ class BinarySearchWindow(customtkinter.CTkToplevel):
         super().__init__(master_app)
         self.app = master_app
         self.title("Gemini Flag Binary Search")
-        self.geometry("450x350")
+        self.geometry("450x400")
         self.protocol("WM_DELETE_WINDOW", self.on_close)
+        self.attributes("-topmost", True)
 
         self.grid_columnconfigure(0, weight=1)
         self.grid_columnconfigure(1, weight=1)
@@ -674,11 +678,17 @@ class BinarySearchWindow(customtkinter.CTkToplevel):
         self.range_frame.grid_columnconfigure(0, weight=1)
         self.range_frame.grid_columnconfigure(1, weight=1)
         self.min_entry = customtkinter.CTkEntry(self.range_frame, placeholder_text="Min Flag ID")
+        self.min_entry.insert(0, "45428766")
         self.min_entry.grid(row=0, column=0, padx=5, pady=5, sticky="ew")
         self.max_entry = customtkinter.CTkEntry(self.range_frame, placeholder_text="Max Flag ID")
+        self.max_entry.insert(0, "45999999")
         self.max_entry.grid(row=0, column=1, padx=5, pady=5, sticky="ew")
+        
+        self.keep_flags_checkbox = customtkinter.CTkCheckBox(self.range_frame, text="Keep current flags enabled")
+        self.keep_flags_checkbox.grid(row=1, column=0, columnspan=2, padx=10, pady=5, sticky="w")
+
         self.start_button = customtkinter.CTkButton(self.range_frame, text="Start Search", command=self.start_search)
-        self.start_button.grid(row=1, column=0, columnspan=2, padx=5, pady=5, sticky="ew")
+        self.start_button.grid(row=2, column=0, columnspan=2, padx=5, pady=5, sticky="ew")
 
         # Search status
         self.status_label = customtkinter.CTkLabel(self, text="Enter a range and start the search.", wraplength=400)
@@ -696,15 +706,34 @@ class BinarySearchWindow(customtkinter.CTkToplevel):
         self.no_button = customtkinter.CTkButton(self.feedback_frame, text="No", command=self.not_found_feature, state="disabled")
         self.no_button.grid(row=1, column=1, padx=5, pady=5, sticky="ew")
 
-        # Instructions
-        self.cache_label = customtkinter.CTkLabel(self, text="Remember to do a hard refresh (Ctrl+Shift+R or Cmd+Shift+R) after each step.", wraplength=400)
-        self.cache_label.grid(row=3, column=0, columnspan=2, padx=10, pady=10)
+        # Instructions & Result
+        self.info_frame = customtkinter.CTkFrame(self, fg_color="transparent")
+        self.info_frame.grid(row=3, column=0, columnspan=2, padx=10, pady=10, sticky="ew")
+        self.info_frame.grid_columnconfigure(0, weight=1)
+
+        self.cache_label = customtkinter.CTkLabel(self.info_frame, text="Remember to do a hard refresh (Ctrl+Shift+R) after each step.", wraplength=400)
+        self.cache_label.grid(row=0, column=0, columnspan=2, padx=10, pady=5)
+
+        self.copy_button = customtkinter.CTkButton(self.info_frame, text="Copy Flag ID", command=self.copy_flag)
         
         self.low = 0
         self.high = 0
         self.mid = 0
         self.original_flags = {}
         self.searching = False
+        self.search_phase = "idle" # idle, initial_check, binary_search, verifying
+
+    def copy_flag(self):
+        self.clipboard_clear()
+        self.clipboard_append(str(self.low))
+        self.status_label.configure(text=f"Flag {self.low} copied to clipboard.")
+
+    def _apply_test_range(self, test_range):
+        flags_to_set = [test_range]
+        if self.keep_flags_checkbox.get() == 1:
+            enabled_original_flags = [flag for flag, config in self.original_flags.items() if config.get("enabled")]
+            flags_to_set.extend(enabled_original_flags)
+        self.app.set_gemini_flags(flags_to_set)
 
     def start_search(self):
         min_val = self.min_entry.get()
@@ -713,14 +742,20 @@ class BinarySearchWindow(customtkinter.CTkToplevel):
             self.status_label.configure(text="Invalid range. Please enter valid numbers with min < max.")
             return
         
+        self.copy_button.grid_forget()
         self.low = int(min_val)
         self.high = int(max_val)
         self.original_flags = self.app.active_profile.get("apps", {}).get("gemini", {}).get("flag_configs", {}).copy()
         
         self.app.log_listeners.append(self.on_log_message)
         self.searching = True
+        self.search_phase = "initial_check"
         self.start_button.configure(state="disabled")
-        self.next_step()
+        
+        self._apply_test_range(f"{self.low}-{self.high}")
+        self.status_label.configure(text=f"Testing initial range: {self.low}-{self.high}\nWaiting for Gemini script load...")
+        self.yes_button.configure(state="disabled")
+        self.no_button.configure(state="disabled")
 
     def next_step(self):
         if self.low > self.high:
@@ -729,46 +764,81 @@ class BinarySearchWindow(customtkinter.CTkToplevel):
             return
 
         if self.low == self.high:
-            self.status_label.configure(text=f"Found flag: {self.low}\nSearch complete. Restoring original flags.")
-            self.stop_search()
+            self.search_phase = "verifying"
+            self._apply_test_range(str(self.low))
+            self.status_label.configure(text=f"Verifying final flag: {self.low}\nWaiting for script...")
+            self.yes_button.configure(state="disabled")
+            self.no_button.configure(state="disabled")
             return
 
         self.mid = (self.low + self.high) // 2
-        test_range = f"{self.low}-{self.mid}"
+        self._apply_test_range(f"{self.low}-{self.mid}")
         
-        self.app.set_gemini_flags([test_range])
-        
-        self.status_label.configure(text=f"Testing range: {test_range}\nWaiting for Gemini script load...")
+        self.status_label.configure(text=f"Testing range: {self.low}-{self.mid}\nWaiting for Gemini script load...")
         self.yes_button.configure(state="disabled")
         self.no_button.configure(state="disabled")
 
     def on_log_message(self, message):
         if self.searching and "proxy.py: Injected Gemini flags into script." in message:
-            self.status_label.configure(text=f"Script loaded with range {self.low}-{self.mid}.\nIs the feature present?")
+            if self.search_phase == "initial_check":
+                self.status_label.configure(text=f"Script loaded with full range {self.low}-{self.high}.\nIs the feature present?")
+            elif self.search_phase == "binary_search":
+                self.status_label.configure(text=f"Script loaded with range {self.low}-{self.mid}.\nIs the feature present?")
+            elif self.search_phase == "verifying":
+                self.status_label.configure(text=f"Script loaded with final flag {self.low}.\nIs the feature present?")
             self.yes_button.configure(state="normal")
             self.no_button.configure(state="normal")
 
     def found_feature(self): # Yes
-        self.high = self.mid
-        self.next_step()
-
-    def not_found_feature(self): # No
-        self.low = self.mid + 1
-        self.next_step()
-
-    def stop_search(self):
-        if self.searching:
+        if self.search_phase == "initial_check":
+            self.search_phase = "binary_search"
+            self.next_step()
+        elif self.search_phase == "binary_search":
+            self.high = self.mid
+            self.next_step()
+        elif self.search_phase == "verifying":
+            self.status_label.configure(text=f"Flag confirmed: {self.low}")
+            self.yes_button.configure(state="disabled")
+            self.no_button.configure(state="disabled")
+            self.copy_button.grid(row=1, column=0, padx=10, pady=10, sticky="ew")
+            self.start_button.configure(text="Reset Search", command=self.stop_search, state="normal")
             if self.on_log_message in self.app.log_listeners:
                 self.app.log_listeners.remove(self.on_log_message)
             self.searching = False
+
+    def not_found_feature(self): # No
+        if self.search_phase == "initial_check":
+            self.status_label.configure(text="Feature not present in the selected range. Aborting search.")
+            self.stop_search()
+        elif self.search_phase == "binary_search":
+            self.low = self.mid + 1
+            self.next_step()
+        elif self.search_phase == "verifying":
+            self.status_label.configure(text=f"Verification failed for flag {self.low}. The feature was not present with only this flag enabled. Restarting search.")
+            self.stop_search()
+
+    def stop_search(self): # This is now the "Reset" method
+        # Restore original flags if a search was ever started
+        if self.original_flags:
+            if self.on_log_message in self.app.log_listeners:
+                self.app.log_listeners.remove(self.on_log_message)
+            
             gemini_app_config = self.app.active_profile.setdefault("apps", {}).setdefault("gemini", {})
             gemini_app_config["flag_configs"] = self.original_flags
             self.app.save_profiles()
             self.app.generate_rules_json()
             self.app.load_gemini_flags()
-        self.start_button.configure(state="normal")
+            self.original_flags = {} # Clear after use
+
+        # Always reset state and UI
+        self.searching = False
+        self.search_phase = "idle"
+        
+        self.status_label.configure(text="Enter a range and start the search.")
+        self.start_button.configure(text="Start Search", command=self.start_search, state="normal")
         self.yes_button.configure(state="disabled")
         self.no_button.configure(state="disabled")
+        self.copy_button.grid_forget()
 
     def on_close(self):
         self.stop_search()

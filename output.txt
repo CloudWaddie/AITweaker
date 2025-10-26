@@ -1,18 +1,10 @@
- wa(a) {
-                const ext_flags = [45730924, 45707395, 45715396, 45715303, "4591400-4591999"];
-                for (const flag of ext_flags) {
-                    if (typeof flag === 'string' && flag.includes('-')) {
-                        const [start,end] = flag.split('-').map(Number);
-                        for (let i = start; i <= end; i++) {
-                            if (!this.ha[i]) {
-                                this.ha[i] = true;
-                            }
-                        }
-                    } else {
-                        if (!this.ha[flag]) {
-                            this.ha[flag] = true;
-                        }
-                    }
-                }
-                return !this.ka || a.key in this.ha ? a.ctor(this.ha[a.key]) : a.defaultValue
-            }
+Traceback (most recent call last):
+  File "mitmproxy\addons\script.py", line 38, in load_script
+  File "<frozen importlib._bootstrap_external>", line 1022, in exec_module
+  File "<frozen importlib._bootstrap_external>", line 1160, in get_code
+  File "<frozen importlib._bootstrap_external>", line 1090, in source_to_code
+  File "<frozen importlib._bootstrap>", line 488, in _call_with_frames_removed
+  File "proxy.py", line 110
+    obj_regex = re.compile(r'(\{[^{}]*?['|"]link['|"]\s*:\s*['|"]/tools/music-fx['|"][^{}]*?\})')
+                                                    ^
+SyntaxError: closing parenthesis ']' does not match opening parenthesis '('

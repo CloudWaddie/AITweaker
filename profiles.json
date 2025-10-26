@@ -12,7 +12,8 @@
                     "enabled": true,
                     "flags": [],
                     "allow_beta": true
-                }
+                },
+                "google_labs": {}
             }
         },
         "GXZkEuj": {
@@ -27,7 +28,7 @@
                         },
                         "45691404": {
                             "note": "Search",
-                            "enabled": false
+                            "enabled": true
                         },
                         "45707395": {
                             "note": "Agent Mode",
@@ -42,7 +43,15 @@
                             "enabled": true
                         },
                         "45720836": {
-                            "note": "Rollout stage switcher",
+                            "note": "Rollout Switcher",
+                            "enabled": true
+                        },
+                        "45728464": {
+                            "note": "Black Sidebar",
+                            "enabled": true
+                        },
+                        "45728377": {
+                            "note": "Chat name at top of chat",
                             "enabled": true
                         }
                     }
@@ -99,7 +108,7 @@
                 },
                 "google_labs": {
                     "enabled": true,
-                    "music_fx_replace": "character",
+                    "music_fx_replace": "bottle",
                     "bypass_not_found": true
                 }
             }

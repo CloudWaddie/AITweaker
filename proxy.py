@@ -98,17 +98,15 @@ class AITweaker:
             return
 
         replacement = google_labs_config.get("music_fx_replace", "None")
-        if replacement == "None":
+        if replacement == "None" or not replacement:
             return
 
         try:
             script = flow.response.get_text()
-            # Replace the link for MusicFX
             original_link = "/tools/music-fx"
-            new_link = f"/tools/{replacement}"
+            # The replacement value from rules.json has the leading '/' stripped by the GUI.
+            new_link = f"/{replacement}"
             
-            # The script is minified, so we need to be careful
-            # Looking for: 'link':'/tools/music-fx' or "link":"/tools/music-fx"
             old_code_single = f"'link':'{original_link}'"
             new_code_single = f"'link':'{new_link}'"
             old_code_double = f'"link":"{original_link}"'
