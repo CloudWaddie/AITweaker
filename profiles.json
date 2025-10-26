@@ -27,7 +27,7 @@
                         },
                         "45691404": {
                             "note": "Search",
-                            "enabled": true
+                            "enabled": false
                         },
                         "45707395": {
                             "note": "Agent Mode",
@@ -39,6 +39,10 @@
                         },
                         "45715303": {
                             "note": "Has deep think IMO?",
+                            "enabled": true
+                        },
+                        "45720836": {
+                            "note": "Rollout stage switcher",
                             "enabled": true
                         }
                     }
@@ -95,7 +99,7 @@
                 },
                 "google_labs": {
                     "enabled": true,
-                    "music_fx_replace": "bottle",
+                    "music_fx_replace": "character",
                     "bypass_not_found": true
                 }
             }
