@@ -1,13 +1,18 @@
-$ python gui.py
-Traceback (most recent call last):
-  File "C:\Users\Edward\Desktop\Projects\aitweaker\gui.py", line 585, in <module>
-    app = App()
-  File "C:\Users\Edward\Desktop\Projects\aitweaker\gui.py", line 116, in __init__
-    self.google_labs_tab = self.tab_view.add("Google Labs")
-                           ~~~~~~~~~~~~~~~~~^^^^^^^^^^^^^^^
-  File "C:\Users\Edward\AppData\Roaming\Python\Python313\site-packages\customtkinter\windows\widgets\ctk_tabview.py", line 360, in add
-    return self.insert(len(self._tab_dict), name)
-           ~~~~~~~~~~~^^^^^^^^^^^^^^^^^^^^^^^^^^^
-  File "C:\Users\Edward\AppData\Roaming\Python\Python313\site-packages\customtkinter\windows\widgets\ctk_tabview.py", line 356, in insert
-    raise ValueError(f"CTkTabview already has tab named '{name}'")
-ValueError: CTkTabview already has tab named 'Google Labs'
+ wa(a) {
+                const ext_flags = [45730924, 45707395, 45715396, 45715303, "4591400-4591999"];
+                for (const flag of ext_flags) {
+                    if (typeof flag === 'string' && flag.includes('-')) {
+                        const [start,end] = flag.split('-').map(Number);
+                        for (let i = start; i <= end; i++) {
+                            if (!this.ha[i]) {
+                                this.ha[i] = true;
+                            }
+                        }
+                    } else {
+                        if (!this.ha[flag]) {
+                            this.ha[flag] = true;
+                        }
+                    }
+                }
+                return !this.ka || a.key in this.ha ? a.ctor(this.ha[a.key]) : a.defaultValue
+            }

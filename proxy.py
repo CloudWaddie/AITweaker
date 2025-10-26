@@ -35,8 +35,17 @@ class AITweaker:
                 replacement = f'''
                 const ext_flags = {flags_string};
                 for (const flag of ext_flags) {{
-                    if (!this.{alias}[flag]) {{
-                        this.{alias}[flag] = true;
+                    if (typeof flag === 'string' && flag.includes('-')) {{
+                        const parts = flag.split('-');
+                        const start = Number(parts[0]);
+                        const end = Number(parts[1]);
+                        if (a.key >= start && a.key <= end) {{
+                            return a.ctor(true);
+                        }}
+                    }} else {{
+                        if (!this.{alias}[flag]) {{
+                            this.{alias}[flag] = true;
+                        }}
                     }}
                 }}
                 {match.group(0)}
