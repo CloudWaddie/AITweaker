@@ -7,6 +7,9 @@ import tkinter
 from tkinter import filedialog
 import os
 import webbrowser
+import sys
+from PIL import Image, ImageDraw
+import pystray
 
 class App(customtkinter.CTk):
     def __init__(self):
@@ -28,6 +31,7 @@ class App(customtkinter.CTk):
         self.gemini_tab = self.tab_view.add("Gemini")
         self.copilot_tab = self.tab_view.add("Copilot")
         self.google_labs_tab = self.tab_view.add("Google Labs")
+        self.settings_tab = self.tab_view.add("Settings")
 
         # --- Proxy Tab ---
         self.proxy_tab.grid_columnconfigure(0, weight=1)
@@ -147,6 +151,15 @@ class App(customtkinter.CTk):
         self.google_labs_save_button = customtkinter.CTkButton(self.google_labs_tab, text="Save Google Labs Changes", command=self.save_google_labs_changes)
         self.google_labs_save_button.grid(row=5, column=0, padx=10, pady=10, sticky="ew")
 
+        # --- Settings Tab ---
+        self.settings_tab.grid_columnconfigure(0, weight=1)
+
+        self.minimize_to_tray_switch = customtkinter.CTkSwitch(self.settings_tab, text="Minimize to tray", command=self.toggle_minimize_to_tray)
+        self.minimize_to_tray_switch.grid(row=0, column=0, padx=10, pady=10, sticky="w")
+
+        self.start_on_startup_switch = customtkinter.CTkSwitch(self.settings_tab, text="Start with Windows", command=self.toggle_start_on_startup)
+        self.start_on_startup_switch.grid(row=1, column=0, padx=10, pady=10, sticky="w")
+
         # --- Load Data ---
         self.log_listeners = []
         self.proxy_process = None
@@ -154,8 +167,10 @@ class App(customtkinter.CTk):
         self.copilot_flag_widgets = {}
         self.load_profiles()
         self.update_profile_dropdown()
+        self.setup_startup()
         self.load_active_profile_data_into_ui()
         self.generate_rules_json()
+        self.start_proxy()
 
     def create_profile_ui(self):
         profile_frame = customtkinter.CTkFrame(self)
@@ -198,6 +213,11 @@ class App(customtkinter.CTk):
                     }
                 }
             }
+
+        self.app_settings = self.profiles_data.get("app_settings", {
+            "minimize_to_tray": False,
+            "start_on_startup": False
+        })
 
         self.active_profile_name = self.profiles_data.get("active_profile", "default")
         if self.active_profile_name not in self.profiles_data.get("profiles", {}):
@@ -259,6 +279,16 @@ class App(customtkinter.CTk):
             self.bypass_not_found_switch.select()
         else:
             self.bypass_not_found_switch.deselect()
+
+        if self.app_settings.get("minimize_to_tray", False):
+            self.minimize_to_tray_switch.select()
+        else:
+            self.minimize_to_tray_switch.deselect()
+
+        if self.app_settings.get("start_on_startup", False):
+            self.start_on_startup_switch.select()
+        else:
+            self.start_on_startup_switch.deselect()
             
         self.load_gemini_flags()
         self.load_copilot_flags()
@@ -373,6 +403,8 @@ class App(customtkinter.CTk):
         self.restart_proxy_if_running()
 
     def quit_app(self):
+        if hasattr(self, 'tray_icon') and self.tray_icon.visible:
+            self.tray_icon.stop()
         if self.proxy_process and self.proxy_process.poll() is None:
             self.proxy_process.terminate()
         self.destroy()
@@ -598,6 +630,87 @@ class App(customtkinter.CTk):
         self.save_profiles()
         self.generate_rules_json()
         self.log_message(f"Google Labs changes saved to profile: '{self.active_profile_name}'\n")
+
+    # --- Settings Methods ---
+    def toggle_minimize_to_tray(self):
+        self.app_settings["minimize_to_tray"] = self.minimize_to_tray_switch.get() == 1
+        self.profiles_data["app_settings"] = self.app_settings
+        self.save_profiles()
+        if self.app_settings["minimize_to_tray"]:
+            self.log_message("Minimize to tray enabled.\n")
+            self.setup_tray_icon()
+            self.protocol("WM_DELETE_WINDOW", self.hide_window)
+        else:
+            self.log_message("Minimize to tray disabled.\n")
+            if hasattr(self, 'tray_icon') and self.tray_icon.visible:
+                self.tray_icon.stop()
+            self.protocol("WM_DELETE_WINDOW", self.quit_app)
+
+    def setup_tray_icon(self):
+        if hasattr(self, 'tray_icon') and self.tray_icon.visible:
+            return
+        
+        width = 64
+        height = 64
+        color1 = (0, 0, 0) 
+        color2 = (255, 255, 255)
+        image = Image.new('RGB', (width, height), color1)
+        dc = ImageDraw.Draw(image)
+        dc.rectangle(
+            (width // 2, 0, width, height // 2),
+            fill=color2)
+        dc.rectangle(
+            (0, height // 2, width // 2, height),
+            fill=color2)
+            
+        menu = (pystray.MenuItem('Show', self.show_window, default=True), pystray.MenuItem('Quit', self.quit_app))
+        self.tray_icon = pystray.Icon("AI Leaks Tweaker", image, "AI Leaks Tweaker", menu)
+        
+        def run_tray_icon():
+            self.tray_icon.run()
+
+        tray_thread = threading.Thread(target=run_tray_icon)
+        tray_thread.daemon = True
+        tray_thread.start()
+
+    def hide_window(self):
+        self.withdraw()
+
+    def show_window(self, icon, item):
+        self.deiconify()
+
+    def toggle_start_on_startup(self):
+        self.app_settings["start_on_startup"] = self.start_on_startup_switch.get() == 1
+        self.profiles_data["app_settings"] = self.app_settings
+        self.save_profiles()
+        self.setup_startup()
+
+    def setup_startup(self):
+        # For Windows
+        try:
+            import winreg
+            app_name = "AITweaker"
+            # Get the path to the executable, assuming it's a frozen app
+            if getattr(sys, 'frozen', False):
+                app_path = sys.executable
+            else:
+                app_path = os.path.abspath(__file__)
+
+            key = winreg.HKEY_CURRENT_USER
+            key_path = r"Software\Microsoft\Windows\CurrentVersion\Run"
+            
+            with winreg.OpenKey(key, key_path, 0, winreg.KEY_ALL_ACCESS) as registry_key:
+                if self.app_settings.get("start_on_startup", False):
+                    command = f'"{app_path}" --startup'
+                    winreg.SetValueEx(registry_key, app_name, 0, winreg.REG_SZ, command)
+                    self.log_message("App set to start with Windows.\n")
+                else:
+                    winreg.DeleteValue(registry_key, app_name)
+                    self.log_message("App removed from Windows startup.\n")
+        except FileNotFoundError:
+             self.log_message("App not found in startup, nothing to remove.\n")
+        except Exception as e:
+            self.log_message(f"Error setting up startup: {e}\n")
 
     # --- Generic Methods ---
     def toggle_proxy(self):
