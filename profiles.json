@@ -7,60 +7,56 @@
                 "gemini": {
                     "enabled": true,
                     "flag_configs": {
-                        "0-45999999": {
-                            "note": "Binary Search",
-                            "enabled": true
-                        },
                         "45730924": {
-                            "note": "Binary Search",
+                            "note": "Default Tools",
                             "enabled": true
                         },
                         "45691404": {
-                            "note": "Binary Search",
+                            "note": "Search",
                             "enabled": true
                         },
                         "45707395": {
-                            "note": "Binary Search",
+                            "note": "Agent Mode",
                             "enabled": true
                         },
                         "45715396": {
-                            "note": "Binary Search",
+                            "note": "Canvas Creative",
                             "enabled": true
                         },
                         "45715303": {
-                            "note": "Binary Search",
+                            "note": "Has deep think IMO?",
                             "enabled": true
                         },
                         "45720836": {
-                            "note": "Binary Search",
+                            "note": "Rollout switcher",
                             "enabled": true
                         },
                         "45728464": {
-                            "note": "Binary Search",
+                            "note": "Black Sidebar",
                             "enabled": true
                         },
                         "45728377": {
-                            "note": "Binary Search",
+                            "note": "Chat name at top",
                             "enabled": true
                         },
                         "45711245": {
-                            "note": "Binary Search",
+                            "note": "My Stuff",
                             "enabled": true
                         },
                         "45663720": {
-                            "note": "Binary Search",
+                            "note": "Separate Activity and Settings & Help",
                             "enabled": true
                         },
                         "45720638": {
-                            "note": "Binary Search",
+                            "note": "Alternative prompt box",
                             "enabled": true
                         },
                         "45685834": {
-                            "note": "Binary Search",
+                            "note": "Prompt power up",
                             "enabled": true
                         },
                         "45428791": {
-                            "note": "Binary Search",
+                            "note": "Quick follow ups",
                             "enabled": true
                         }
                     }
@@ -115,8 +111,16 @@
                     "enabled": true,
                     "allow_beta": true
                 },
-                "google_labs": {}
+                "google_labs": {
+                    "enabled": true,
+                    "music_fx_replace": "debug",
+                    "bypass_not_found": true
+                }
             }
         }
+    },
+    "app_settings": {
+        "minimize_to_tray": true,
+        "start_on_startup": false
     }
 }
