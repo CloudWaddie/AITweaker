@@ -33,18 +33,22 @@ class AITweaker:
                 alias = match.group(1)
                 flags_string = json.dumps(flags_to_inject)
                 replacement = f'''
+                this.{alias}[45659183] = false;
                 const ext_flags = {flags_string};
                 for (const flag of ext_flags) {{
                     if (typeof flag === 'string' && flag.includes('-')) {{
                         const parts = flag.split('-');
                         const start = Number(parts[0]);
                         const end = Number(parts[1]);
-                        if (a.key >= start && a.key <= end) {{
+                        if (a.key >= start && a.key <= end && a.key != 45659183) {{
                             return a.ctor(true);
                         }}
                     }} else {{
-                        if (!this.{alias}[flag]) {{
-                            this.{alias}[flag] = true;
+                        if (flag != 45659183) {{
+                            const flagType = typeof this.{alias}[flag];
+                            if (flagType === 'boolean' || flagType === 'undefined') {{
+                                this.{alias}[flag] = true;
+                            }}
                         }}
                     }}
                 }}

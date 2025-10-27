@@ -1,57 +1,66 @@
 {
-    "active_profile": "GXZkEuj",
+    "active_profile": "default",
     "profiles": {
         "default": {
-            "proxy_command": "mitmdump -s proxy.py -p 8000",
-            "apps": {
-                "gemini": {
-                    "enabled": true,
-                    "flag_configs": {}
-                },
-                "copilot": {
-                    "enabled": true,
-                    "flags": [],
-                    "allow_beta": true
-                },
-                "google_labs": {}
-            }
-        },
-        "GXZkEuj": {
             "proxy_command": "mitmdump -s proxy.py -p 8000 --ssl-insecure",
             "apps": {
                 "gemini": {
                     "enabled": true,
                     "flag_configs": {
+                        "0-45999999": {
+                            "note": "Binary Search",
+                            "enabled": true
+                        },
                         "45730924": {
-                            "note": "Default Tools",
+                            "note": "Binary Search",
                             "enabled": true
                         },
                         "45691404": {
-                            "note": "Search",
+                            "note": "Binary Search",
                             "enabled": true
                         },
                         "45707395": {
-                            "note": "Agent Mode",
+                            "note": "Binary Search",
                             "enabled": true
                         },
                         "45715396": {
-                            "note": "Canvas Creative",
+                            "note": "Binary Search",
                             "enabled": true
                         },
                         "45715303": {
-                            "note": "Has deep think IMO?",
+                            "note": "Binary Search",
                             "enabled": true
                         },
                         "45720836": {
-                            "note": "Rollout Switcher",
+                            "note": "Binary Search",
                             "enabled": true
                         },
                         "45728464": {
-                            "note": "Black Sidebar",
+                            "note": "Binary Search",
                             "enabled": true
                         },
                         "45728377": {
-                            "note": "Chat name at top of chat",
+                            "note": "Binary Search",
+                            "enabled": true
+                        },
+                        "45711245": {
+                            "note": "Binary Search",
+                            "enabled": true
+                        },
+                        "45663720": {
+                            "note": "Binary Search",
+                            "enabled": true
+                        },
+                        "45720638": {
+                            "note": "Binary Search",
+                            "enabled": true
+                        },
+                        "45685834": {
+                            "note": "Binary Search",
+                            "enabled": true
+                        },
+                        "45428791": {
+                            "note": "Binary Search",
                             "enabled": true
                         }
                     }
@@ -106,11 +115,7 @@
                     "enabled": true,
                     "allow_beta": true
                 },
-                "google_labs": {
-                    "enabled": true,
-                    "music_fx_replace": "bottle",
-                    "bypass_not_found": true
-                }
+                "google_labs": {}
             }
         }
     }
