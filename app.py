@@ -157,7 +157,7 @@ class App(customtkinter.CTk):
         self.minimize_to_tray_switch = customtkinter.CTkSwitch(self.settings_tab, text="Minimize to tray", command=self.toggle_minimize_to_tray)
         self.minimize_to_tray_switch.grid(row=0, column=0, padx=10, pady=10, sticky="w")
 
-        self.start_on_startup_switch = customtkinter.CTkSwitch(self.settings_tab, text="Start with Windows", command=self.toggle_start_on_startup)
+        self.start_on_startup_switch = customtkinter.CTkSwitch(self.settings_tab, text="Start with OS", command=self.toggle_start_on_startup)
         self.start_on_startup_switch.grid(row=1, column=0, padx=10, pady=10, sticky="w")
 
         # --- Load Data ---
@@ -686,31 +686,88 @@ class App(customtkinter.CTk):
         self.setup_startup()
 
     def setup_startup(self):
-        # For Windows
+        if sys.platform == "win32":
+            self._setup_windows_startup()
+        elif sys.platform == "darwin":
+            self._setup_macos_startup()
+        elif sys.platform.startswith("linux"):
+            self._setup_linux_startup()
+
+    def _setup_windows_startup(self):
         try:
             import winreg
             app_name = "AITweaker"
-            # Get the path to the executable, assuming it's a frozen app
-            if getattr(sys, 'frozen', False):
-                app_path = sys.executable
-            else:
-                app_path = os.path.abspath(__file__)
-
             key = winreg.HKEY_CURRENT_USER
             key_path = r"Software\Microsoft\Windows\CurrentVersion\Run"
             
             with winreg.OpenKey(key, key_path, 0, winreg.KEY_ALL_ACCESS) as registry_key:
                 if self.app_settings.get("start_on_startup", False):
-                    command = f'"{app_path}" --startup'
-                    winreg.SetValueEx(registry_key, app_name, 0, winreg.REG_SZ, command)
+                    script_path = os.path.abspath("run.bat")
+                    winreg.SetValueEx(registry_key, app_name, 0, winreg.REG_SZ, script_path)
                     self.log_message("App set to start with Windows.\n")
                 else:
-                    winreg.DeleteValue(registry_key, app_name)
-                    self.log_message("App removed from Windows startup.\n")
-        except FileNotFoundError:
-             self.log_message("App not found in startup, nothing to remove.\n")
+                    try:
+                        winreg.DeleteValue(registry_key, app_name)
+                        self.log_message("App removed from Windows startup.\n")
+                    except FileNotFoundError:
+                        self.log_message("App not in startup, nothing to remove.\n")
         except Exception as e:
-            self.log_message(f"Error setting up startup: {e}\n")
+            self.log_message(f"Error setting up Windows startup: {e}\n")
+
+    def _setup_macos_startup(self):
+        try:
+            script_path = os.path.abspath("run.sh")
+            plist_content = f'''<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE plist PUBLIC "-//Apple//DTD PLIST 1.0//EN" "http://www.apple.com/DTDs/PropertyList-1.0.dtd">
+<plist version="1.0">
+<dict>
+    <key>Label</key>
+    <string>com.tweaker.app</string>
+    <key>ProgramArguments</key>
+    <array>
+        <string>{script_path}</string>
+    </array>
+    <key>RunAtLoad</key>
+    <true/>
+</dict>
+</plist>'''
+            plist_path = os.path.expanduser("~/Library/LaunchAgents/com.tweaker.app.plist")
+
+            if self.app_settings.get("start_on_startup", False):
+                with open(plist_path, "w") as f:
+                    f.write(plist_content)
+                self.log_message("App set to start with macOS.\n")
+            else:
+                if os.path.exists(plist_path):
+                    os.remove(plist_path)
+                    self.log_message("App removed from macOS startup.\n")
+        except Exception as e:
+            self.log_message(f"Error setting up macOS startup: {e}\n")
+
+    def _setup_linux_startup(self):
+        try:
+            script_path = os.path.abspath("run.sh")
+            desktop_entry = f'''[Desktop Entry]
+Type=Application
+Name=AI Tweaker
+Exec={script_path}
+StartupNotify=true
+Terminal=false'''
+            autostart_dir = os.path.expanduser("~/.config/autostart")
+            if not os.path.exists(autostart_dir):
+                os.makedirs(autostart_dir)
+            desktop_file_path = os.path.join(autostart_dir, "tweaker.desktop")
+
+            if self.app_settings.get("start_on_startup", False):
+                with open(desktop_file_path, "w") as f:
+                    f.write(desktop_entry)
+                self.log_message("App set to start with Linux.\n")
+            else:
+                if os.path.exists(desktop_file_path):
+                    os.remove(desktop_file_path)
+                    self.log_message("App removed from Linux startup.\n")
+        except Exception as e:
+            self.log_message(f"Error setting up Linux startup: {e}\n")
 
     # --- Generic Methods ---
     def toggle_proxy(self):
@@ -726,7 +783,7 @@ class App(customtkinter.CTk):
             for line in iter(stream.readline, ''): self.log_message(line)
         def run_proxy():
             try:
-                self.proxy_process = subprocess.Popen(command.split(), stderr=subprocess.PIPE, stdout=subprocess.PIPE, text=True, creationflags=subprocess.CREATE_NO_WINDOW)
+                self.proxy_process = subprocess.Popen(command.split(), stderr=subprocess.PIPE, stdout=subprocess.PIPE, text=True)
                 if self.show_all_logs_checkbox.get():
                     stdout_thread = threading.Thread(target=stream_reader, args=(self.proxy_process.stdout,)); stdout_thread.daemon = True; stdout_thread.start()
                 stderr_thread = threading.Thread(target=stream_reader, args=(self.proxy_process.stderr,)); stderr_thread.daemon = True; stderr_thread.start()
@@ -894,11 +951,11 @@ class BinarySearchWindow(customtkinter.CTkToplevel):
     def on_log_message(self, message):
         if self.searching and "proxy.py: Injected Gemini flags into script." in message:
             if self.search_phase == "initial_check":
-                self.status_label.configure(text=f"Script loaded with full range {self.low}-{self.high}.\nIs the feature present?")
+                self.status_label.configure(text=f"Script loaded with full range {self.low}-{self.high}\nIs the feature present?")
             elif self.search_phase == "binary_search":
-                self.status_label.configure(text=f"Script loaded with range {self.low}-{self.mid}.\nIs the feature present?")
+                self.status_label.configure(text=f"Script loaded with range {self.low}-{self.mid}\nIs the feature present?")
             elif self.search_phase == "verifying":
-                self.status_label.configure(text=f"Script loaded with final flag {self.low}.\nIs the feature present?")
+                self.status_label.configure(text=f"Script loaded with final flag {self.low}\nIs the feature present?")
             self.yes_button.configure(state="normal")
             self.no_button.configure(state="normal")
 

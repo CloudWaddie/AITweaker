@@ -33,7 +33,7 @@
                         },
                         "45728464": {
                             "note": "Black Sidebar",
-                            "enabled": true
+                            "enabled": false
                         },
                         "45728377": {
                             "note": "Chat name at top",
@@ -49,7 +49,7 @@
                         },
                         "45720638": {
                             "note": "Alternative prompt box",
-                            "enabled": true
+                            "enabled": false
                         },
                         "45685834": {
                             "note": "Prompt power up",
@@ -57,6 +57,10 @@
                         },
                         "45428791": {
                             "note": "Quick follow ups",
+                            "enabled": true
+                        },
+                        "45709348": {
+                            "note": "Visual Layout",
                             "enabled": true
                         }
                     }

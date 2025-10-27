@@ -21,22 +21,31 @@ A desktop application to intercept and modify network requests for AI web applic
 
 1.  **Clone the repository or download the source.**
 
-2.  **Install dependencies:**
-    Create a virtual environment (recommended) and install the required packages from the current directory.
-    ```sh
-    python -m venv venv
-    source venv/bin/activate  # On Windows, use `venv\Scripts\activate`
-    pip install -r requirements.txt
-    ```
+2.  **Run the setup script for your operating system:**
+
+    -   **Windows:**
+        ```batch
+        scripts\setup.bat
+        ```
+
+    -   **macOS/Linux:**
+        ```sh
+        bash scripts/setup.sh
+        ```
 
 ## Usage
 
 ### 1. Running the Application
 
-To start the GUI, run the following command in the project's root directory:
-```sh
-python gui.py
-```
+-   **Windows:**
+    ```batch
+    run.bat
+    ```
+
+-   **macOS/Linux:**
+    ```sh
+    ./run.sh
+    ```
 
 ### 2. Setting up the Proxy
 
