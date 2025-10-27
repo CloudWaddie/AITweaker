@@ -3,7 +3,6 @@
         "gemini": {
             "enabled": true,
             "flags": [
-                "0-45999999",
                 45428791,
                 45663720,
                 45685834,
@@ -36,6 +35,10 @@
             ],
             "allow_beta": true
         },
-        "google_labs": {}
+        "google_labs": {
+            "enabled": true,
+            "music_fx_replace": "debug",
+            "bypass_not_found": true
+        }
     }
 }
