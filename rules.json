@@ -3,10 +3,16 @@
         "gemini": {
             "enabled": true,
             "flags": [
+                "0-45999999",
+                45428791,
+                45663720,
+                45685834,
                 45691404,
                 45707395,
+                45711245,
                 45715303,
                 45715396,
+                45720638,
                 45720836,
                 45728377,
                 45728464,
@@ -30,10 +36,6 @@
             ],
             "allow_beta": true
         },
-        "google_labs": {
-            "enabled": true,
-            "music_fx_replace": "bottle",
-            "bypass_not_found": true
-        }
+        "google_labs": {}
     }
 }
