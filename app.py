@@ -61,35 +61,41 @@ class App(customtkinter.CTk):
         self.log_label = customtkinter.CTkLabel(self.log_frame, text="Logs")
         self.log_label.grid(row=0, column=0, padx=10, pady=5, sticky="w")
 
-        self.show_all_logs_checkbox = customtkinter.CTkCheckBox(self.log_frame, text="Show all logs")
-        self.show_all_logs_checkbox.grid(row=1, column=0, padx=10, pady=5, sticky="w")
-
         self.log_textbox = customtkinter.CTkTextbox(self.log_frame)
-        self.log_textbox.grid(row=2, column=0, columnspan=2, padx=10, pady=5, sticky="nsew")
+        self.log_textbox.grid(row=1, column=0, columnspan=2, padx=10, pady=5, sticky="nsew")
         self.log_textbox.configure(state="disabled")
 
         # --- Gemini Tab ---
         self.gemini_tab.grid_columnconfigure(0, weight=1)
-        self.gemini_tab.grid_rowconfigure(2, weight=1)
+        self.gemini_tab.grid_rowconfigure(1, weight=1)
 
         self.gemini_modification_switch = customtkinter.CTkSwitch(self.gemini_tab, text="Enable Gemini Modifications", command=self.toggle_gemini_modification)
         self.gemini_modification_switch.grid(row=0, column=0, padx=10, pady=10, sticky="w")
 
-        self.gemini_search_entry = customtkinter.CTkEntry(self.gemini_tab, placeholder_text="Search Gemini flags...")
-        self.gemini_search_entry.grid(row=1, column=0, padx=10, pady=5, sticky="ew")
+        self.gemini_tab_view = customtkinter.CTkTabview(self.gemini_tab)
+        self.gemini_tab_view.grid(row=1, column=0, padx=0, pady=0, sticky="nsew")
+
+        self.gemini_flags_tab = self.gemini_tab_view.add("Flags")
+
+        # --- Gemini Flags Tab ---
+        self.gemini_flags_tab.grid_columnconfigure(0, weight=1)
+        self.gemini_flags_tab.grid_rowconfigure(1, weight=1)
+
+        self.gemini_search_entry = customtkinter.CTkEntry(self.gemini_flags_tab, placeholder_text="Search Gemini flags...")
+        self.gemini_search_entry.grid(row=0, column=0, padx=10, pady=5, sticky="ew")
         self.gemini_search_entry.bind("<KeyRelease>", self.filter_gemini_flags)
 
-        self.gemini_flags_list_frame = customtkinter.CTkScrollableFrame(self.gemini_tab)
-        self.gemini_flags_list_frame.grid(row=2, column=0, padx=10, pady=5, sticky="nsew")
+        self.gemini_flags_list_frame = customtkinter.CTkScrollableFrame(self.gemini_flags_tab)
+        self.gemini_flags_list_frame.grid(row=1, column=0, padx=10, pady=5, sticky="nsew")
 
-        self.gemini_add_flag_entry = customtkinter.CTkEntry(self.gemini_tab, placeholder_text="Enter flag ID to add")
-        self.gemini_add_flag_entry.grid(row=3, column=0, padx=10, pady=5, sticky="ew")
+        self.gemini_add_flag_textbox = customtkinter.CTkTextbox(self.gemini_flags_tab, height=60)
+        self.gemini_add_flag_textbox.grid(row=2, column=0, padx=10, pady=5, sticky="ew")
 
-        self.gemini_add_flag_button = customtkinter.CTkButton(self.gemini_tab, text="Add Flag", command=self.add_gemini_flag)
-        self.gemini_add_flag_button.grid(row=4, column=0, padx=10, pady=5, sticky="ew")
+        self.gemini_add_flag_button = customtkinter.CTkButton(self.gemini_flags_tab, text="Add Flag(s)", command=self.add_gemini_flag)
+        self.gemini_add_flag_button.grid(row=3, column=0, padx=10, pady=5, sticky="ew")
 
-        self.gemini_add_range_frame = customtkinter.CTkFrame(self.gemini_tab)
-        self.gemini_add_range_frame.grid(row=5, column=0, padx=10, pady=5, sticky="ew")
+        self.gemini_add_range_frame = customtkinter.CTkFrame(self.gemini_flags_tab)
+        self.gemini_add_range_frame.grid(row=4, column=0, padx=10, pady=5, sticky="ew")
         self.gemini_add_range_frame.grid_columnconfigure(0, weight=1)
         self.gemini_add_range_frame.grid_columnconfigure(1, weight=1)
 
@@ -102,11 +108,12 @@ class App(customtkinter.CTk):
         self.gemini_add_range_button = customtkinter.CTkButton(self.gemini_add_range_frame, text="Add Range", command=self.add_gemini_range)
         self.gemini_add_range_button.grid(row=0, column=2, padx=(5, 0), pady=5)
 
-        self.gemini_binary_search_button = customtkinter.CTkButton(self.gemini_tab, text="Binary Search for Flag", command=self.open_binary_search_window)
-        self.gemini_binary_search_button.grid(row=6, column=0, padx=10, pady=5, sticky="ew")
+        self.gemini_binary_search_button = customtkinter.CTkButton(self.gemini_flags_tab, text="Binary Search for Flag", command=self.open_binary_search_window)
+        self.gemini_binary_search_button.grid(row=5, column=0, padx=10, pady=5, sticky="ew")
 
-        self.gemini_save_changes_button = customtkinter.CTkButton(self.gemini_tab, text="Save Gemini Changes", command=self.save_gemini_changes)
-        self.gemini_save_changes_button.grid(row=7, column=0, padx=10, pady=5, sticky="ew")
+        self.gemini_save_changes_button = customtkinter.CTkButton(self.gemini_flags_tab, text="Save Gemini Changes", command=self.save_gemini_changes)
+        self.gemini_save_changes_button.grid(row=6, column=0, padx=10, pady=5, sticky="ew")
+
 
         # --- Copilot Tab ---
         self.copilot_tab.grid_columnconfigure(0, weight=1)
@@ -387,7 +394,10 @@ class App(customtkinter.CTk):
                     else:
                         enabled_flags.append(int(id))
 
-                apps_for_backend["gemini"] = {"enabled": gemini_config.get("enabled", True), "flags": enabled_flags}
+                apps_for_backend["gemini"] = {
+                    "enabled": gemini_config.get("enabled", True), 
+                    "flags": enabled_flags
+                }
             if "copilot" in self.active_profile["apps"]:
                 copilot_config = self.active_profile["apps"]["copilot"]
                 enabled_flags = [f["name"] for f in copilot_config.get("flags", []) if f.get("enabled", True)]
@@ -475,32 +485,63 @@ class App(customtkinter.CTk):
             self.log_message(f"Error: Flag '{flag_to_add}' already exists.\n")
 
     def add_gemini_flag(self):
-        flag_to_add = self.gemini_add_flag_entry.get()
-        if not flag_to_add:
+        input_text = self.gemini_add_flag_textbox.get("1.0", "end-1c")
+        if not input_text:
             return
 
-        # Validate the input
-        is_valid_range = False
-        if '-' in flag_to_add:
-            parts = flag_to_add.split('-')
-            if len(parts) == 2 and parts[0].isdigit() and parts[1].isdigit() and int(parts[0]) < int(parts[1]):
-                is_valid_range = True
+        # Split by newlines to handle multi-line paste
+        lines = input_text.strip().split('\n')
         
-        if not is_valid_range and not flag_to_add.isdigit():
-            self.log_message(f"Error: Invalid flag or range: {flag_to_add}\n")
-            return
-
         gemini_app_config = self.active_profile.setdefault("apps", {}).setdefault("gemini", {})
         flag_configs = gemini_app_config.setdefault("flag_configs", {})
-        self.log_message(f"Before add: {flag_configs}\n")
-        if flag_to_add not in flag_configs:
+        
+        added_flags = []
+        invalid_flags = []
+        duplicate_flags = []
+        
+        for line in lines:
+            flag_to_add = line.strip()
+            if not flag_to_add:
+                continue
+            
+            # Validate the input
+            is_valid_range = False
+            if '-' in flag_to_add:
+                parts = flag_to_add.split('-')
+                if len(parts) == 2 and parts[0].isdigit() and parts[1].isdigit() and int(parts[0]) < int(parts[1]):
+                    is_valid_range = True
+            
+            if not is_valid_range and not flag_to_add.isdigit():
+                invalid_flags.append(flag_to_add)
+                continue
+            
+            if flag_to_add in flag_configs:
+                duplicate_flags.append(flag_to_add)
+                continue
+            
             flag_configs[flag_to_add] = {"note": "", "enabled": True}
-            self.log_message(f"After add: {flag_configs}\n")
+            added_flags.append(flag_to_add)
+        
+        # Save and reload if any flags were added
+        if added_flags:
             self.save_profiles()
             self.generate_rules_json()
             self.load_gemini_flags()
-            self.gemini_add_flag_entry.delete(0, "end")
-            self.log_message(f"Gemini Flag '{flag_to_add}' added.\n")
+            self.gemini_add_flag_textbox.delete("1.0", "end")
+            
+            if len(added_flags) == 1:
+                self.log_message(f"Gemini Flag '{added_flags[0]}' added.\n")
+            else:
+                self.log_message(f"Added {len(added_flags)} Gemini flags: {', '.join(added_flags)}\n")
+        
+        # Report any issues
+        if invalid_flags:
+            self.log_message(f"Error: Invalid flags skipped: {', '.join(invalid_flags)}\n")
+        if duplicate_flags:
+            self.log_message(f"Warning: Duplicate flags skipped: {', '.join(duplicate_flags)}\n")
+        
+        if not added_flags and not invalid_flags and not duplicate_flags:
+            self.log_message("Error: No valid flags to add.\n")
 
     def remove_gemini_flag(self, flag_to_remove):
         gemini_app_config = self.active_profile.setdefault("apps", {}).setdefault("gemini", {})
@@ -780,12 +821,18 @@ Terminal=false'''
         if command != self.active_profile.get("proxy_command"): self.active_profile["proxy_command"] = command; self.save_profiles()
         self.proxy_control_button.configure(text="Stop Proxy"); self.log_textbox.configure(state="normal"); self.log_textbox.delete("1.0", "end"); self.log_message(f"Starting proxy with command: {command}\n")
         def stream_reader(stream):
-            for line in iter(stream.readline, ''): self.log_message(line)
+            for line in iter(stream.readline, ''):
+                if line.startswith("[TERMINAL_LOG]"):
+                    # Print to terminal without the prefix and with a newline
+                    print(line[len("[TERMINAL_LOG]"):].strip())
+                    sys.stdout.flush()
+                else:
+                    # Send to GUI log
+                    self.log_message(line)
         def run_proxy():
             try:
                 self.proxy_process = subprocess.Popen(command.split(), stderr=subprocess.PIPE, stdout=subprocess.PIPE, text=True)
-                if self.show_all_logs_checkbox.get():
-                    stdout_thread = threading.Thread(target=stream_reader, args=(self.proxy_process.stdout,)); stdout_thread.daemon = True; stdout_thread.start()
+                stdout_thread = threading.Thread(target=stream_reader, args=(self.proxy_process.stdout,)); stdout_thread.daemon = True; stdout_thread.start()
                 stderr_thread = threading.Thread(target=stream_reader, args=(self.proxy_process.stderr,)); stderr_thread.daemon = True; stderr_thread.start()
                 self.proxy_process.wait()
             except Exception as e: self.log_message(f"Failed to start proxy: {e}\n")

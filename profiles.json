@@ -1,5 +1,5 @@
 {
-    "active_profile": "default",
+    "active_profile": "test",
     "profiles": {
         "default": {
             "proxy_command": "mitmdump -s proxy.py -p 8000 --ssl-insecure",
@@ -119,6 +119,67 @@
                     "enabled": true,
                     "music_fx_replace": "debug",
                     "bypass_not_found": true
+                }
+            }
+        },
+        "test": {
+            "proxy_command": "mitmdump -s proxy.py -p 8000",
+            "apps": {
+                "gemini": {
+                    "enabled": true,
+                    "flag_configs": {
+                        "45638677": {
+                            "note": "",
+                            "enabled": true
+                        },
+                        "45668251": {
+                            "note": "",
+                            "enabled": true
+                        },
+                        "45693581": {
+                            "note": "",
+                            "enabled": true
+                        },
+                        "45713262": {
+                            "note": "",
+                            "enabled": true
+                        },
+                        "45715303": {
+                            "note": "",
+                            "enabled": true
+                        },
+                        "45716212": {
+                            "note": "",
+                            "enabled": true
+                        },
+                        "45727691": {
+                            "note": "",
+                            "enabled": true
+                        },
+                        "45731378": {
+                            "note": "",
+                            "enabled": true
+                        },
+                        "45736559": {
+                            "note": "",
+                            "enabled": true
+                        },
+                        "45737920": {
+                            "note": "",
+                            "enabled": true
+                        }
+                    },
+                    "time_warp_url": "\nhttps://www.gstatic.com/_/mss/boq-bard-web/_/js/k=boq-bard-web.BardChatUi.en.p3qIpsHh1xI.2018.O/am=h3gIVsc8gD0AAAQAAIAB/d=1/excm=_b/ed=1/dg=0/br=1/wt=2/ujg=1/rs=AL3bBk17AXO5EwUcpKeNYxX2q-XbjKKMLw/ee=DGWCxb:CgYiQ;Pjplud:PoEs9b;QGR0gd:Mlhmy;ScI3Yc:e7Hzgb;Uvc8o:VDovNc;YIZmRd:A1yn5d;cEt90b:ws9Tlc;dowIGb:ebZ3mb;lOO0Vd:OTA3Ae;qafBPd:ovKuLd;wNp4Gc:k56rsf/dti=1/m=_b?wli=BardChatUi.dJQ7iAxYnNU.libheifWasm.O%3A%3BBardChatUi.YG9DmwfNO6k.loadWasmSipCoca.O%3A%3B"
+                },
+                "copilot": {
+                    "enabled": true,
+                    "flags": [],
+                    "allow_beta": false
+                },
+                "google_labs": {
+                    "enabled": true,
+                    "music_fx_replace": "None",
+                    "bypass_not_found": false
                 }
             }
         }

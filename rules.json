@@ -3,41 +3,27 @@
         "gemini": {
             "enabled": true,
             "flags": [
-                45428791,
-                45663720,
-                45685834,
-                45691404,
-                45707395,
-                45709348,
-                45711245,
+                45638677,
+                45668251,
+                45693581,
+                45713262,
                 45715303,
-                45715396,
-                45720836,
-                45728377,
-                45730924
+                45716212,
+                45727691,
+                45731378,
+                45736559,
+                45737920
             ]
         },
         "copilot": {
             "enabled": true,
-            "flags": [
-                "appearance-try-now-modal",
-                "appr-home",
-                "appr-home-toggle",
-                "character-animation-spda2e",
-                "character-animation-vasa",
-                "coco-mode",
-                "full-facial-animation",
-                "multiplecharacters",
-                "share-invite",
-                "share-to-invite",
-                "tv-lumi"
-            ],
-            "allow_beta": true
+            "flags": [],
+            "allow_beta": false
         },
         "google_labs": {
             "enabled": true,
-            "music_fx_replace": "debug",
-            "bypass_not_found": true
+            "music_fx_replace": "None",
+            "bypass_not_found": false
         }
     }
 }
