@@ -16,7 +16,7 @@ A desktop application to intercept and modify network requests for AI web applic
 
 - Python 3.8+
 - `pip` (Python package installer)
-
+- pipx install mitmproxy
 ### Installation
 
 1.  **Clone the repository or download the source.**

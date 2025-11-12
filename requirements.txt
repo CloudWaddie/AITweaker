@@ -3,3 +3,5 @@ mitmproxy
 pystray
 Pillow
 cx_Freeze
+beautifulsoup4
+lxml
