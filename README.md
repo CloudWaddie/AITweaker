@@ -1,6 +1,6 @@
 # AI Leaks Tweaker
 
-# Proudly sponsored by [Snyk](https://snyk.io/)
+# Proudly sponsored by [Snyk](https://snyk.io/?utm_source=open-source&utm_medium=pg-ptr&utm_campaign=ref-2501-osp&utm_content=pg-cta)
 <img width="644" height="442" alt="Scanned By Snyk (2)" src="https://github.com/user-attachments/assets/826473d8-8467-4f41-b1cb-142f97536aa1" />
 
 
