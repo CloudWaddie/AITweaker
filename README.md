@@ -1,5 +1,7 @@
 # AI Leaks Tweaker
 
+# Proudly sponsored by [Snyk](https://snyk.io/)
+
 A desktop application to intercept and modify network requests for AI web applications, allowing for real-time feature flag manipulation.
 
 ## Features
