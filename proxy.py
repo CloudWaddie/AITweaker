@@ -164,22 +164,6 @@ class AITweaker:
 
 
 
-    def modify_json_response(self, flow: http.HTTPFlow):
-        google_labs_config = self.rules.get("apps", {}).get("google_labs", {})
-        if not google_labs_config.get("enabled", False) or not google_labs_config.get("bypass_not_found", False):
-            return
-        
-        if flow.response and "application/json" in flow.response.headers.get("content-type", ""):
-            if flow.response.text == '{"notFound":true}':
-                flow.response.text = '{"notFound":false}'
-                ctx.log.info("proxy.py: Bypassed notFound=true.")
-
-        if flow.response.status_code == 404 and re.match(r"^https://labs\\.google/fx/_next/data/.*\\.json(\\?.*)?$", flow.request.url):
-            flow.response.status_code = 200
-            flow.response.text = '{"notFound":false}'
-            flow.response.headers["Content-Type"] = "application/json"
-            ctx.log.info(f"proxy.py: Overwrote 404 response for {flow.request.pretty_url}")
-
     def request(self, flow: http.HTTPFlow) -> None:
         self.load_rules()
 
