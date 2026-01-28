@@ -824,8 +824,10 @@ Terminal=false'''
             for line in iter(stream.readline, ''):
                 if line.startswith("[TERMINAL_LOG]"):
                     # Print to terminal without the prefix and with a newline
-                    print(line[len("[TERMINAL_LOG]"):].strip())
+                    content = line[len("[TERMINAL_LOG]"):].strip()
+                    print(content)
                     sys.stdout.flush()
+                    self.log_message(content + "\n")
                 else:
                     # Send to GUI log
                     self.log_message(line)
@@ -996,7 +998,7 @@ class BinarySearchWindow(customtkinter.CTkToplevel):
         self.no_button.configure(state="disabled")
 
     def on_log_message(self, message):
-        if self.searching and "proxy.py: Injected Gemini flags into script." in message:
+        if self.searching and "Modified Gemini script" in message:
             if self.search_phase == "initial_check":
                 self.status_label.configure(text=f"Script loaded with full range {self.low}-{self.high}\nIs the feature present?")
             elif self.search_phase == "binary_search":
