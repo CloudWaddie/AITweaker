@@ -182,18 +182,18 @@ class AITweaker:
                     # Using simple string replacement as these keys are likely unique enough in context
                     # or we can use regex for safety
                     
-                    subs_replacements = [
-                        (r'"isSuperGrokUser":false', r'"isSuperGrokUser":true'),
-                        (r'"isSuperGrokProUser":false', r'"isSuperGrokProUser":true'),
-                        (r'"isEnterpriseUser":false', r'"isEnterpriseUser":true')
-                    ]
-                    
-                    for pattern, replacement in subs_replacements:
-                        if re.search(pattern, html):
-                            html = re.sub(pattern, replacement, html)
-                            modified = True
-                            print(f"[TERMINAL_LOG] Spoofed Grok subscription ({pattern} -> true)")
-                except Exception as e:
+                                    subs_replacements = [
+                                        (r'"isSuperGrokUser":false', r'"isSuperGrokUser":true'),
+                                        (r'"isSuperGrokProUser":false', r'"isSuperGrokProUser":true'),
+                                        (r'"isEnterpriseUser":false', r'"isEnterpriseUser":true'),
+                                        (r'"xSubscriptionType":"[^"]*"', r'"xSubscriptionType":"SuperGrok"')
+                                    ]
+                                    
+                                    for pattern, replacement in subs_replacements:
+                                        if re.search(pattern, html):
+                                            html = re.sub(pattern, replacement, html)
+                                            modified = True
+                                            print(f"[TERMINAL_LOG] Spoofed Grok subscription ({pattern} -> {replacement})")                except Exception as e:
                     ctx.log.error(f"Error during Grok subscription spoofing: {e}")
     
             if modified:
