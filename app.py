@@ -161,7 +161,7 @@ class App(customtkinter.CTk):
 
         # --- Grok Tab ---
         self.grok_tab.grid_columnconfigure(0, weight=1)
-        self.grok_tab.grid_rowconfigure(2, weight=1)
+        self.grok_tab.grid_rowconfigure(3, weight=1)
 
         self.grok_modification_switch = customtkinter.CTkSwitch(self.grok_tab, text="Enable Grok Modifications", command=self.toggle_grok_modification)
         self.grok_modification_switch.grid(row=0, column=0, padx=10, pady=10, sticky="w")
@@ -180,11 +180,31 @@ class App(customtkinter.CTk):
         self.grok_format_button = customtkinter.CTkButton(self.grok_actions_frame, text="Format & Validate JSON", command=self.format_grok_json)
         self.grok_format_button.grid(row=0, column=1, padx=5, pady=5, sticky="ew")
 
+        self.grok_search_frame = customtkinter.CTkFrame(self.grok_tab)
+        self.grok_search_frame.grid(row=2, column=0, padx=10, pady=(5,0), sticky="ew")
+        self.grok_search_frame.grid_columnconfigure(0, weight=1)
+
+        self.grok_search_entry = customtkinter.CTkEntry(self.grok_search_frame, placeholder_text="Search JSON...")
+        self.grok_search_entry.grid(row=0, column=0, padx=5, pady=5, sticky="ew")
+        self.grok_search_entry.bind("<Return>", self.grok_find_next)
+
+        self.grok_find_prev_button = customtkinter.CTkButton(self.grok_search_frame, text="<", width=30, command=self.grok_find_prev)
+        self.grok_find_prev_button.grid(row=0, column=1, padx=2, pady=5)
+
+        self.grok_find_next_button = customtkinter.CTkButton(self.grok_search_frame, text=">", width=30, command=self.grok_find_next)
+        self.grok_find_next_button.grid(row=0, column=2, padx=2, pady=5)
+        
+        self.grok_toggle_bool_button = customtkinter.CTkButton(self.grok_search_frame, text="Toggle Boolean", width=100, command=self.grok_toggle_boolean)
+        self.grok_toggle_bool_button.grid(row=0, column=3, padx=5, pady=5)
+
         self.grok_json_textbox = customtkinter.CTkTextbox(self.grok_tab)
-        self.grok_json_textbox.grid(row=2, column=0, padx=10, pady=5, sticky="nsew")
+        self.grok_json_textbox.grid(row=3, column=0, padx=10, pady=5, sticky="nsew")
+        
+        # Bind double click for easy toggling
+        self.grok_json_textbox._textbox.bind("<Double-Button-1>", self.grok_toggle_boolean)
 
         self.grok_save_button = customtkinter.CTkButton(self.grok_tab, text="Save Grok Changes", command=self.save_grok_changes)
-        self.grok_save_button.grid(row=3, column=0, padx=10, pady=10, sticky="ew")
+        self.grok_save_button.grid(row=4, column=0, padx=10, pady=10, sticky="ew")
 
         # --- Settings Tab ---
         self.settings_tab.grid_columnconfigure(0, weight=1)
@@ -767,6 +787,84 @@ class App(customtkinter.CTk):
         except json.JSONDecodeError as e:
             self.log_message(f"Invalid JSON: {e}\n")
             return False
+
+    def grok_find_next(self, event=None):
+        self._grok_search("next")
+
+    def grok_find_prev(self):
+        self._grok_search("prev")
+
+    def _grok_search(self, direction):
+        search_str = self.grok_search_entry.get()
+        if not search_str:
+            return
+
+        text_widget = self.grok_json_textbox._textbox
+        text_widget.tag_remove("found", "1.0", "end")
+        
+        start_index = "insert"
+        
+        if direction == "next":
+            pos = text_widget.search(search_str, start_index, stopindex="end", nocase=True)
+            # Loop around if not found
+            if not pos:
+                pos = text_widget.search(search_str, "1.0", stopindex=start_index, nocase=True)
+        else:
+            pos = text_widget.search(search_str, start_index, stopindex="1.0", backwards=True, nocase=True)
+            if not pos:
+                pos = text_widget.search(search_str, "end", stopindex=start_index, backwards=True, nocase=True)
+
+        if pos:
+            # Highlight and scroll
+            end_pos = f"{pos}+{len(search_str)}c"
+            text_widget.tag_add("found", pos, end_pos)
+            text_widget.tag_config("found", background="yellow", foreground="black")
+            text_widget.mark_set("insert", end_pos if direction == "next" else pos)
+            text_widget.see(pos)
+            text_widget.focus_set()
+
+    def grok_toggle_boolean(self, event=None):
+        text_widget = self.grok_json_textbox._textbox
+        
+        # If triggered by event (double click), use the mouse position
+        if event:
+            try:
+                index = text_widget.index(f"@{event.x},{event.y}")
+                text_widget.mark_set("insert", index)
+            except:
+                pass
+        
+        # Get word at cursor
+        try:
+            # Expand selection to word boundaries
+            word_start = text_widget.search(r'\W', "insert", backwards=True, regexp=True, stopindex="insert linestart")
+            if not word_start: word_start = "insert linestart"
+            else: word_start = f"{word_start}+1c"
+            
+            word_end = text_widget.search(r'\W', "insert", regexp=True, stopindex="insert lineend")
+            if not word_end: word_end = "insert lineend"
+            
+            # Extract word
+            current_word = text_widget.get(word_start, word_end).strip()
+            
+            # Check if boolean
+            new_word = None
+            if current_word == "true":
+                new_word = "false"
+            elif current_word == "false":
+                new_word = "true"
+            
+            if new_word:
+                text_widget.delete(word_start, word_end)
+                text_widget.insert(word_start, new_word)
+                self.log_message(f"Toggled boolean: {current_word} -> {new_word}\n")
+                # Highlight change briefly
+                text_widget.tag_add("changed", word_start, f"{word_start}+{len(new_word)}c")
+                text_widget.tag_config("changed", background="lightgreen", foreground="black")
+                self.after(500, lambda: text_widget.tag_remove("changed", "1.0", "end"))
+                return "break" # Prevent default double-click selection if we handled it
+        except Exception as e:
+            self.log_message(f"Error toggling boolean: {e}\n")
 
     def save_grok_changes(self):
         if not self.format_grok_json():
