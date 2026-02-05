@@ -16,6 +16,7 @@ class AITweaker:
         self.gemini_url_pattern = re.compile(r'^https?:\/\/www\.gstatic\.com\/.*m=_b(\?.*)?$', re.S)
         self.gemini_module_pattern = re.compile(r'^https?:\/\/www\.gstatic\.com\/_\/mss\/boq-bard-web\/_\/js\/.*\/m=')
         self.copilot_url_pattern = re.compile(r'^https?:\/\/copilot\.microsoft\.com\/c\/api\/start.*')
+        self.grok_url_pattern = re.compile(r'^https?:\/\/(www\.)?grok\.com\/.*')
         self.google_labs_url_pattern = re.compile(r'^https?:\/\/labs\.google\/fx\/_next\/static\/chunks\/pages\/index-.*\.js')
         self.google_labs_json_pattern = re.compile(r'^https?:\/\/labs\.google\/fx\/_next\/data\/.*\.json(\?.*)?$')
 
@@ -146,6 +147,40 @@ class AITweaker:
         except Exception as e:
             ctx.log.error(f"Error during Google Labs script modification: {e}")
 
+    def modify_grok_response(self, flow: http.HTTPFlow):
+        grok_config = self.rules.get("apps", {}).get("grok", {})
+        if not grok_config.get("enabled", False):
+            return
+
+        custom_json_str = grok_config.get("config_json", "{}")
+        if not custom_json_str or custom_json_str == "{}":
+            return
+
+        try:
+            html = flow.response.get_text()
+            # Simple regex replacement for speed
+            pattern = r'(<script type="application/json" id="server-client-data-experimentation">)(.*?)(</script>)'
+            
+            # Check if pattern exists before doing costly operations
+            if re.search(pattern, html, re.DOTALL):
+                # Minify the custom JSON to ensure it fits and avoids syntax issues in the HTML
+                try:
+                    minified_json = json.dumps(json.loads(custom_json_str))
+                    # Use a function for replacement to handle groups correctly
+                    new_html = re.sub(pattern, lambda m: f'{m.group(1)}{minified_json}{m.group(3)}', html, count=1, flags=re.DOTALL)
+                    
+                    if new_html != html:
+                        flow.response.text = new_html
+                        print(f"[TERMINAL_LOG] Modified Grok configuration: {flow.request.pretty_url}")
+                except json.JSONDecodeError:
+                    ctx.log.error("proxy.py: Invalid JSON in Grok configuration rules.")
+            else:
+                # Only log verbose if needed, otherwise it spams
+                pass
+
+        except Exception as e:
+            ctx.log.error(f"Error during Grok response modification: {e}")
+
     def modify_json_response(self, flow: http.HTTPFlow):
         google_labs_config = self.rules.get("apps", {}).get("google_labs", {})
         if not google_labs_config.get("enabled", False) or not google_labs_config.get("bypass_not_found", False):
@@ -189,6 +224,9 @@ class AITweaker:
         
         if self.copilot_url_pattern.match(flow.request.url):
             self.modify_copilot_response(flow)
+
+        if self.grok_url_pattern.match(flow.request.url):
+            self.modify_grok_response(flow)
 
         if self.google_labs_url_pattern.match(flow.request.url) or self.google_labs_json_pattern.match(flow.request.url):
             self.modify_google_labs_script(flow)
