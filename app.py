@@ -31,6 +31,7 @@ class App(customtkinter.CTk):
         self.gemini_tab = self.tab_view.add("Gemini")
         self.copilot_tab = self.tab_view.add("Copilot")
         self.google_labs_tab = self.tab_view.add("Google Labs")
+        self.grok_tab = self.tab_view.add("Grok")
         self.settings_tab = self.tab_view.add("Settings")
 
         # --- Proxy Tab ---
@@ -158,6 +159,30 @@ class App(customtkinter.CTk):
         self.google_labs_save_button = customtkinter.CTkButton(self.google_labs_tab, text="Save Google Labs Changes", command=self.save_google_labs_changes)
         self.google_labs_save_button.grid(row=5, column=0, padx=10, pady=10, sticky="ew")
 
+        # --- Grok Tab ---
+        self.grok_tab.grid_columnconfigure(0, weight=1)
+        self.grok_tab.grid_rowconfigure(2, weight=1)
+
+        self.grok_modification_switch = customtkinter.CTkSwitch(self.grok_tab, text="Enable Grok Modifications", command=self.toggle_grok_modification)
+        self.grok_modification_switch.grid(row=0, column=0, padx=10, pady=10, sticky="w")
+
+        self.grok_actions_frame = customtkinter.CTkFrame(self.grok_tab)
+        self.grok_actions_frame.grid(row=1, column=0, padx=10, pady=5, sticky="ew")
+        self.grok_actions_frame.grid_columnconfigure(0, weight=1)
+        self.grok_actions_frame.grid_columnconfigure(1, weight=1)
+
+        self.grok_load_default_button = customtkinter.CTkButton(self.grok_actions_frame, text="Load Extracted Config", command=self.load_grok_default_config)
+        self.grok_load_default_button.grid(row=0, column=0, padx=5, pady=5, sticky="ew")
+
+        self.grok_format_button = customtkinter.CTkButton(self.grok_actions_frame, text="Format & Validate JSON", command=self.format_grok_json)
+        self.grok_format_button.grid(row=0, column=1, padx=5, pady=5, sticky="ew")
+
+        self.grok_json_textbox = customtkinter.CTkTextbox(self.grok_tab)
+        self.grok_json_textbox.grid(row=2, column=0, padx=10, pady=5, sticky="nsew")
+
+        self.grok_save_button = customtkinter.CTkButton(self.grok_tab, text="Save Grok Changes", command=self.save_grok_changes)
+        self.grok_save_button.grid(row=3, column=0, padx=10, pady=10, sticky="ew")
+
         # --- Settings Tab ---
         self.settings_tab.grid_columnconfigure(0, weight=1)
 
@@ -215,7 +240,8 @@ class App(customtkinter.CTk):
                         "apps": {
                             "gemini": {"enabled": True, "flag_configs": {}},
                             "copilot": {"enabled": True, "flags": [], "allow_beta": False},
-                            "google_labs": {"enabled": True, "music_fx_replace": "None", "bypass_not_found": False}
+                            "google_labs": {"enabled": True, "music_fx_replace": "None", "bypass_not_found": False},
+                            "grok": {"enabled": True, "config_json": "{}"}
                         }
                     }
                 }
@@ -287,6 +313,30 @@ class App(customtkinter.CTk):
         else:
             self.bypass_not_found_switch.deselect()
 
+        grok_app_config = self.active_profile.setdefault("apps", {}).setdefault("grok", {})
+        if grok_app_config.get("enabled", True):
+            self.grok_modification_switch.select()
+        else:
+            self.grok_modification_switch.deselect()
+        
+        self.grok_json_textbox.delete("1.0", "end")
+        grok_json_str = grok_app_config.get("config_json", "{}")
+        if not grok_json_str or grok_json_str == "{}":
+             # Try to load from default file if empty
+             try:
+                 if os.path.exists("grok_config.json"):
+                     with open("grok_config.json", "r", encoding="utf-8") as f:
+                         grok_json_str = f.read()
+             except:
+                 pass
+        
+        # Pretty print if possible
+        try:
+            parsed = json.loads(grok_json_str)
+            self.grok_json_textbox.insert("1.0", json.dumps(parsed, indent=4))
+        except:
+            self.grok_json_textbox.insert("1.0", grok_json_str)
+
         if self.app_settings.get("minimize_to_tray", False):
             self.minimize_to_tray_switch.select()
         else:
@@ -317,7 +367,8 @@ class App(customtkinter.CTk):
                 "apps": {
                     "gemini": {"enabled": True, "flag_configs": {}},
                     "copilot": {"enabled": True, "flags": [], "allow_beta": False},
-                    "google_labs": {"enabled": True, "music_fx_replace": "None", "bypass_not_found": False}
+                    "google_labs": {"enabled": True, "music_fx_replace": "None", "bypass_not_found": False},
+                    "grok": {"enabled": True, "config_json": "{}"}
                 }
             }
             self.switch_profile(new_name)
@@ -408,6 +459,8 @@ class App(customtkinter.CTk):
                 }
             if "google_labs" in self.active_profile["apps"]:
                 apps_for_backend["google_labs"] = self.active_profile["apps"]["google_labs"]
+            if "grok" in self.active_profile["apps"]:
+                apps_for_backend["grok"] = self.active_profile["apps"]["grok"]
 
         with open("rules.json", "w") as f: json.dump({"apps": apps_for_backend}, f, indent=4)
         self.restart_proxy_if_running()
@@ -671,6 +724,53 @@ class App(customtkinter.CTk):
         self.save_profiles()
         self.generate_rules_json()
         self.log_message(f"Google Labs changes saved to profile: '{self.active_profile_name}'\n")
+
+    # --- Grok Methods ---
+    def toggle_grok_modification(self):
+        grok_app_config = self.active_profile.setdefault("apps", {}).setdefault("grok", {})
+        grok_app_config["enabled"] = self.grok_modification_switch.get() == 1
+        self.save_profiles()
+        self.generate_rules_json()
+        self.log_message(f"Grok modification {'enabled' if grok_app_config['enabled'] else 'disabled'}.\n")
+
+    def load_grok_default_config(self):
+        try:
+            if os.path.exists("grok_config.json"):
+                with open("grok_config.json", "r", encoding="utf-8") as f:
+                    content = f.read()
+                    parsed = json.loads(content)
+                    self.grok_json_textbox.delete("1.0", "end")
+                    self.grok_json_textbox.insert("1.0", json.dumps(parsed, indent=4))
+                    self.log_message("Loaded extracted Grok configuration.\n")
+            else:
+                self.log_message("Error: grok_config.json not found. Run the extractor first or browse.\n")
+        except Exception as e:
+            self.log_message(f"Error loading Grok config: {e}\n")
+
+    def format_grok_json(self):
+        content = self.grok_json_textbox.get("1.0", "end-1c")
+        try:
+            parsed = json.loads(content)
+            formatted = json.dumps(parsed, indent=4)
+            self.grok_json_textbox.delete("1.0", "end")
+            self.grok_json_textbox.insert("1.0", formatted)
+            self.log_message("JSON is valid and formatted.\n")
+            return True
+        except json.JSONDecodeError as e:
+            self.log_message(f"Invalid JSON: {e}\n")
+            return False
+
+    def save_grok_changes(self):
+        if not self.format_grok_json():
+            return
+        
+        grok_app_config = self.active_profile.setdefault("apps", {}).setdefault("grok", {})
+        grok_app_config["enabled"] = self.grok_modification_switch.get() == 1
+        grok_app_config["config_json"] = self.grok_json_textbox.get("1.0", "end-1c")
+        
+        self.save_profiles()
+        self.generate_rules_json()
+        self.log_message(f"Grok changes saved to profile: '{self.active_profile_name}'\n")
 
     # --- Settings Methods ---
     def toggle_minimize_to_tray(self):
