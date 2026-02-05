@@ -166,6 +166,9 @@ class App(customtkinter.CTk):
         self.grok_modification_switch = customtkinter.CTkSwitch(self.grok_tab, text="Enable Grok Modifications", command=self.toggle_grok_modification)
         self.grok_modification_switch.grid(row=0, column=0, padx=10, pady=10, sticky="w")
 
+        self.grok_spoof_subscription_switch = customtkinter.CTkSwitch(self.grok_tab, text="Spoof Subscription (Pro/Super)", command=self.save_grok_changes)
+        self.grok_spoof_subscription_switch.grid(row=0, column=1, padx=10, pady=10, sticky="e")
+
         self.grok_actions_frame = customtkinter.CTkFrame(self.grok_tab)
         self.grok_actions_frame.grid(row=1, column=0, padx=10, pady=5, sticky="ew")
         self.grok_actions_frame.grid_columnconfigure(0, weight=1)
@@ -241,7 +244,7 @@ class App(customtkinter.CTk):
                             "gemini": {"enabled": True, "flag_configs": {}},
                             "copilot": {"enabled": True, "flags": [], "allow_beta": False},
                             "google_labs": {"enabled": True, "music_fx_replace": "None", "bypass_not_found": False},
-                            "grok": {"enabled": True, "config_json": "{}"}
+                            "grok": {"enabled": True, "config_json": "{}", "spoof_subscription": False}
                         }
                     }
                 }
@@ -318,6 +321,11 @@ class App(customtkinter.CTk):
             self.grok_modification_switch.select()
         else:
             self.grok_modification_switch.deselect()
+
+        if grok_app_config.get("spoof_subscription", False):
+            self.grok_spoof_subscription_switch.select()
+        else:
+            self.grok_spoof_subscription_switch.deselect()
         
         self.grok_json_textbox.delete("1.0", "end")
         grok_json_str = grok_app_config.get("config_json", "{}")
@@ -368,7 +376,7 @@ class App(customtkinter.CTk):
                     "gemini": {"enabled": True, "flag_configs": {}},
                     "copilot": {"enabled": True, "flags": [], "allow_beta": False},
                     "google_labs": {"enabled": True, "music_fx_replace": "None", "bypass_not_found": False},
-                    "grok": {"enabled": True, "config_json": "{}"}
+                    "grok": {"enabled": True, "config_json": "{}", "spoof_subscription": False}
                 }
             }
             self.switch_profile(new_name)
@@ -766,6 +774,7 @@ class App(customtkinter.CTk):
         
         grok_app_config = self.active_profile.setdefault("apps", {}).setdefault("grok", {})
         grok_app_config["enabled"] = self.grok_modification_switch.get() == 1
+        grok_app_config["spoof_subscription"] = self.grok_spoof_subscription_switch.get() == 1
         grok_app_config["config_json"] = self.grok_json_textbox.get("1.0", "end-1c")
         
         self.save_profiles()
