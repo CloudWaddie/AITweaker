@@ -147,40 +147,57 @@ class AITweaker:
         except Exception as e:
             ctx.log.error(f"Error during Google Labs script modification: {e}")
 
-    def modify_grok_response(self, flow: http.HTTPFlow):
-        grok_config = self.rules.get("apps", {}).get("grok", {})
-        if not grok_config.get("enabled", False):
-            return
-
-        custom_json_str = grok_config.get("config_json", "{}")
-        if not custom_json_str or custom_json_str == "{}":
-            return
-
-        try:
+        def modify_grok_response(self, flow: http.HTTPFlow):
+            grok_config = self.rules.get("apps", {}).get("grok", {})
+            if not grok_config.get("enabled", False):
+                return
+    
             html = flow.response.get_text()
-            # Simple regex replacement for speed
-            pattern = r'(<script type="application/json" id="server-client-data-experimentation">)(.*?)(</script>)'
-            
-            # Check if pattern exists before doing costly operations
-            if re.search(pattern, html, re.DOTALL):
-                # Minify the custom JSON to ensure it fits and avoids syntax issues in the HTML
+            modified = False
+    
+            # Handle Config JSON replacement
+            custom_json_str = grok_config.get("config_json", "{}")
+            if custom_json_str and custom_json_str != "{}":
                 try:
-                    minified_json = json.dumps(json.loads(custom_json_str))
-                    # Use a function for replacement to handle groups correctly
-                    new_html = re.sub(pattern, lambda m: f'{m.group(1)}{minified_json}{m.group(3)}', html, count=1, flags=re.DOTALL)
+                    # Simple regex replacement for speed
+                    pattern = r'(<script type="application/json" id="server-client-data-experimentation">)(.*?)(</script>)'
                     
-                    if new_html != html:
-                        flow.response.text = new_html
-                        print(f"[TERMINAL_LOG] Modified Grok configuration: {flow.request.pretty_url}")
-                except json.JSONDecodeError:
-                    ctx.log.error("proxy.py: Invalid JSON in Grok configuration rules.")
-            else:
-                # Only log verbose if needed, otherwise it spams
-                pass
-
-        except Exception as e:
-            ctx.log.error(f"Error during Grok response modification: {e}")
-
+                    if re.search(pattern, html, re.DOTALL):
+                        try:
+                            minified_json = json.dumps(json.loads(custom_json_str))
+                            new_html = re.sub(pattern, lambda m: f'{m.group(1)}{minified_json}{m.group(3)}', html, count=1, flags=re.DOTALL)
+                            if new_html != html:
+                                html = new_html
+                                modified = True
+                                print(f"[TERMINAL_LOG] Modified Grok configuration: {flow.request.pretty_url}")
+                        except json.JSONDecodeError:
+                            ctx.log.error("proxy.py: Invalid JSON in Grok configuration rules.")
+                except Exception as e:
+                    ctx.log.error(f"Error during Grok config modification: {e}")
+    
+            # Handle Subscription Spoofing
+            if grok_config.get("spoof_subscription", False):
+                try:
+                    # Replace false with true for specific keys
+                    # Using simple string replacement as these keys are likely unique enough in context
+                    # or we can use regex for safety
+                    
+                    subs_replacements = [
+                        (r'"isSuperGrokUser":false', r'"isSuperGrokUser":true'),
+                        (r'"isSuperGrokProUser":false', r'"isSuperGrokProUser":true'),
+                        (r'"isEnterpriseUser":false', r'"isEnterpriseUser":true')
+                    ]
+                    
+                    for pattern, replacement in subs_replacements:
+                        if re.search(pattern, html):
+                            html = re.sub(pattern, replacement, html)
+                            modified = True
+                            print(f"[TERMINAL_LOG] Spoofed Grok subscription ({pattern} -> true)")
+                except Exception as e:
+                    ctx.log.error(f"Error during Grok subscription spoofing: {e}")
+    
+            if modified:
+                flow.response.text = html
     def modify_json_response(self, flow: http.HTTPFlow):
         google_labs_config = self.rules.get("apps", {}).get("google_labs", {})
         if not google_labs_config.get("enabled", False) or not google_labs_config.get("bypass_not_found", False):
