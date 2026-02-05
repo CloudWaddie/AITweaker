@@ -10,6 +10,8 @@ import webbrowser
 import sys
 from PIL import Image, ImageDraw
 import pystray
+import urllib.request
+import re
 
 class App(customtkinter.CTk):
     def __init__(self):
@@ -173,12 +175,16 @@ class App(customtkinter.CTk):
         self.grok_actions_frame.grid(row=1, column=0, padx=10, pady=5, sticky="ew")
         self.grok_actions_frame.grid_columnconfigure(0, weight=1)
         self.grok_actions_frame.grid_columnconfigure(1, weight=1)
+        self.grok_actions_frame.grid_columnconfigure(2, weight=1)
 
         self.grok_load_default_button = customtkinter.CTkButton(self.grok_actions_frame, text="Load Extracted Config", command=self.load_grok_default_config)
         self.grok_load_default_button.grid(row=0, column=0, padx=5, pady=5, sticky="ew")
 
+        self.grok_fetch_web_button = customtkinter.CTkButton(self.grok_actions_frame, text="Fetch Latest (Web)", command=self.fetch_latest_grok_config)
+        self.grok_fetch_web_button.grid(row=0, column=1, padx=5, pady=5, sticky="ew")
+
         self.grok_format_button = customtkinter.CTkButton(self.grok_actions_frame, text="Format & Validate JSON", command=self.format_grok_json)
-        self.grok_format_button.grid(row=0, column=1, padx=5, pady=5, sticky="ew")
+        self.grok_format_button.grid(row=0, column=2, padx=5, pady=5, sticky="ew")
 
         self.grok_search_frame = customtkinter.CTkFrame(self.grok_tab)
         self.grok_search_frame.grid(row=2, column=0, padx=10, pady=(5,0), sticky="ew")
@@ -774,6 +780,42 @@ class App(customtkinter.CTk):
                 self.log_message("Error: grok_config.json not found. Run the extractor first or browse.\n")
         except Exception as e:
             self.log_message(f"Error loading Grok config: {e}\n")
+
+    def fetch_latest_grok_config(self):
+        def _fetch():
+            self.log_message("Fetching latest config from https://grok.com...\n")
+            try:
+                req = urllib.request.Request(
+                    "https://grok.com", 
+                    data=None, 
+                    headers={
+                        'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/91.0.4472.124 Safari/537.36'
+                    }
+                )
+                with urllib.request.urlopen(req, timeout=10) as response:
+                    content = response.read().decode('utf-8')
+                
+                match = re.search(r'<script type="application/json" id="server-client-data-experimentation">(.*?)</script>', content, re.DOTALL)
+                if match:
+                    json_str = match.group(1)
+                    try:
+                        parsed = json.loads(json_str)
+                        formatted = json.dumps(parsed, indent=4)
+                        
+                        # Update UI in main thread
+                        self.after(0, lambda: self.grok_json_textbox.delete("1.0", "end"))
+                        self.after(0, lambda: self.grok_json_textbox.insert("1.0", formatted))
+                        self.after(0, lambda: self.log_message("Successfully fetched and loaded latest Grok config.\n"))
+                    except json.JSONDecodeError as e:
+                        self.after(0, lambda: self.log_message(f"Error parsing fetched JSON: {e}\n"))
+                else:
+                    self.after(0, lambda: self.log_message("Error: Could not find configuration script tag in response.\n"))
+            except Exception as e:
+                self.after(0, lambda: self.log_message(f"Error fetching config: {e}\n"))
+
+        fetch_thread = threading.Thread(target=_fetch)
+        fetch_thread.daemon = True
+        fetch_thread.start()
 
     def format_grok_json(self):
         content = self.grok_json_textbox.get("1.0", "end-1c")
