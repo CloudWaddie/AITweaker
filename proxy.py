@@ -13,8 +13,11 @@ class AITweaker:
         self.load_rules()
 
         self.gemini_html_pattern = re.compile(r'^https?:\/\/gemini\.google\.com\/.*')
-        self.gemini_url_pattern = re.compile(r'^https?:\/\/www\.gstatic\.com\/.*m=_b(\?.*)?$', re.S)
-        self.gemini_module_pattern = re.compile(r'^https?:\/\/www\.gstatic\.com\/_\/mss\/boq-bard-web\/_\/js\/.*\/m=')
+        # Match ANY gemini.gstatic.com or www.gstatic.com URL that serves Bard JS modules
+        # The m= parameter at end of path identifies the module file (e.g., m=LQaXg, m=_b)
+        # We intercept ANY module JS file from the boq-bard-web path
+        self.gemini_url_pattern = re.compile(r'^https?:\/\/(www|gemini)\.gstatic\.com\/_\/mss\/boq-bard-web\/_\/js\/.*\/m=\w+(\?.*)?$', re.S)
+        self.gemini_module_pattern = re.compile(r'^https?:\/\/(www|gemini)\.gstatic\.com\/_\/mss\/boq-bard-web\/_\/js\/.*\/m=')
         self.copilot_url_pattern = re.compile(r'^https?:\/\/copilot\.microsoft\.com\/c\/api\/start.*')
         self.grok_url_pattern = re.compile(r'^https?:\/\/(www\.)?grok\.com\/.*')
         self.google_labs_url_pattern = re.compile(r'^https?:\/\/labs\.google\/fx\/_next\/static\/chunks\/pages\/index-.*\.js')
@@ -27,14 +30,14 @@ class AITweaker:
                 with open(self.rules_path, 'r') as f:
                     self.rules = json.load(f)
                 self.last_load_time = mtime
-                ctx.log.info("proxy.py: Reloaded rules.json.")
+                print(f"[TERMINAL_LOG] proxy.py: Reloaded rules.json.")
         except FileNotFoundError:
             if self.rules or self.last_load_time > 0:
-                ctx.log.warn("proxy.py: rules.json not found. Clearing all rules.")
+                print(f"[TERMINAL_LOG] proxy.py: rules.json not found. Clearing all rules.")
                 self.rules = {"apps": {}}
                 self.last_load_time = 0
         except Exception as e:
-            ctx.log.error(f"Error checking/loading rules.json: {e}")
+            print(f"[TERMINAL_LOG] Error checking/loading rules.json: {e}")
 
     def modify_gemini_script(self, flow: http.HTTPFlow):
         gemini_config = self.rules.get("apps", {}).get("gemini", {})
@@ -45,39 +48,46 @@ class AITweaker:
             return
         try:
             script = flow.response.get_text()
-            regex = r'return\s*!\s*this\.\w+\s*\|\|\s*\w+(?:\.\w+)?\s*in\s*this\.(\w+)\s*\?\s*\w+(?:\.\w+)?\(this\.\w+\[\w+(?:\.\w+)?\]\)\s*:\s*\w+(?:\.\w+)?'
-            match = re.search(regex, script)
-            if match:
-                alias = match.group(1)
-                flags_string = json.dumps(flags_to_inject)
-                replacement = f'''
-                this.{alias}[45659183] = false;
-                const ext_flags = {flags_string};
-                for (const flag of ext_flags) {{
-                    if (typeof flag === 'string' && flag.includes('-')) {{
-                        const parts = flag.split('-');
-                        const start = Number(parts[0]);
-                        const end = Number(parts[1]);
-                        if (a.key >= start && a.key <= end && a.key != 45659183) {{
-                            return a.ctor(true);
-                        }}
-                    }} else {{
-                        if (flag != 45659183) {{
-                            const flagType = typeof this.{alias}[flag];
-                            if (flagType === 'boolean' || flagType === 'undefined') {{
-                                this.{alias}[flag] = true;
-                            }}
-                        }}
-                    }}
+            # Build a JavaScript function to check if a flag key is in our list (supports ranges)
+            # flags_to_inject can contain: numbers (exact match) or "start-end" strings (range)
+            exact_flags = []
+            range_flags = []
+            for flag in flags_to_inject:
+                flag_str = str(flag)
+                if '-' in flag_str:
+                    range_flags.append(flag_str)
+                else:
+                    exact_flags.append(flag_str)
+            
+            exact_flags_js = json.dumps(exact_flags)
+            range_flags_js = json.dumps(range_flags)
+            
+            # JavaScript check function
+            js_check = f'''(function(key) {{
+                if ({exact_flags_js}.includes(key)) return !0;
+                var ranges = {range_flags_js};
+                for (var i = 0; i < ranges.length; i++) {{
+                    var parts = ranges[i].split('-');
+                    var start = Number(parts[0]);
+                    var end = Number(parts[1]);
+                    if (key >= start && key <= end) return !0;
                 }}
-                {match.group(0)}
-                '''
-                flow.response.text = script.replace(match.group(0), replacement)
-                print(f"[TERMINAL_LOG] Modified Gemini script: {flow.request.pretty_url}")
+                return !1;
+            }})'''
+            
+            # Find and replace ctor method
+            ctor_pattern = r'ctor\(a\)\{return typeof a===\"boolean\"\?a:this\.defaultValue\}'
+            match = re.search(ctor_pattern, script)
+            if match:
+                original_ctor = match.group(0)
+                new_ctor = f'ctor(a){{if({js_check}(this.key))return!0;return typeof a==="boolean"?a:this.defaultValue}}'
+                script = script.replace(original_ctor, new_ctor, 1)
+                flow.response.text = script
+                print(f"[TERMINAL_LOG] Modified Gemini ctor for flags: exact={exact_flags}, ranges={range_flags}")
             else:
-                ctx.log.info("proxy.py: Target for Gemini modification not found in script.")
+                print(f"[TERMINAL_LOG] [WARN] ctor method not found in {flow.request.pretty_url}")
         except Exception as e:
-            ctx.log.error(f"Error during Gemini script modification: {e}")
+            print(f"[TERMINAL_LOG] [ERROR] Error modifying Gemini script: {e}")
 
     def modify_copilot_response(self, flow: http.HTTPFlow):
         copilot_config = self.rules.get("apps", {}).get("copilot", {})
@@ -92,7 +102,7 @@ class AITweaker:
             if copilot_config.get("allow_beta", False) and body.get("allowBeta") is not True:
                 body["allowBeta"] = True
                 modified = True
-                ctx.log.info("Set 'allowBeta' to true in Copilot response.")
+                print(f"[TERMINAL_LOG] Set 'allowBeta' to true in Copilot response.")
 
             # Modify feature flags
             flags_to_add = copilot_config.get("flags", [])
@@ -106,14 +116,14 @@ class AITweaker:
                     body["features"] = list(existing_features)
                     modified = True
                     added_count = len(existing_features) - initial_count
-                    ctx.log.info(f"Injected {added_count} new Copilot flags.")
+                    print(f"[TERMINAL_LOG] Injected {added_count} new Copilot flags.")
             
             if modified:
                 flow.response.text = json.dumps(body)
                 print(f"[TERMINAL_LOG] Modified Copilot response: {flow.request.pretty_url}")
 
         except Exception as e:
-            ctx.log.error(f"Error modifying Copilot response: {e}")
+            print(f"[TERMINAL_LOG] Error modifying Copilot response: {e}")
 
     def modify_google_labs_script(self, flow: http.HTTPFlow):
         google_labs_config = self.rules.get("apps", {}).get("google_labs", {})
@@ -142,10 +152,10 @@ class AITweaker:
                 flow.response.text = script.replace(old_code_double, new_code_double)
                 print(f"[TERMINAL_LOG] Modified Google Labs script (MusicFX link): {flow.request.pretty_url}")
             else:
-                ctx.log.info("proxy.py: Target for MusicFX link replacement not found.")
+                print(f"[TERMINAL_LOG] proxy.py: Target for MusicFX link replacement not found.")
 
         except Exception as e:
-            ctx.log.error(f"Error during Google Labs script modification: {e}")
+            print(f"[TERMINAL_LOG] Error during Google Labs script modification: {e}")
 
     def modify_grok_response(self, flow: http.HTTPFlow):
         grok_config = self.rules.get("apps", {}).get("grok", {})
@@ -171,9 +181,9 @@ class AITweaker:
                             modified = True
                             print(f"[TERMINAL_LOG] Modified Grok configuration: {flow.request.pretty_url}")
                     except json.JSONDecodeError:
-                        ctx.log.error("proxy.py: Invalid JSON in Grok configuration rules.")
+                        print(f"[TERMINAL_LOG] proxy.py: Invalid JSON in Grok configuration rules.")
             except Exception as e:
-                ctx.log.error(f"Error during Grok config modification: {e}")
+                print(f"[TERMINAL_LOG] Error during Grok config modification: {e}")
 
         # Handle Subscription Spoofing
         if grok_config.get("spoof_subscription", False):
@@ -192,7 +202,7 @@ class AITweaker:
                         modified = True
                         print(f"[TERMINAL_LOG] Spoofed Grok subscription ({pattern} -> {replacement})")
             except Exception as e:
-                ctx.log.error(f"Error during Grok subscription spoofing: {e}")
+                print(f"[TERMINAL_LOG] Error during Grok subscription spoofing: {e}")
 
         if modified:
             flow.response.text = html
@@ -230,7 +240,7 @@ class AITweaker:
         self.load_rules()
 
         if "batchexecute" in flow.request.url and "gemini.google.com" in flow.request.url:
-            ctx.log.info(f"proxy.py: Explicitly ignoring Gemini batchexecute URL to prevent modification.")
+            print(f"[TERMINAL_LOG] proxy.py: Explicitly ignoring Gemini batchexecute URL to prevent modification.")
             return
 
         # Removed timewarp logic
