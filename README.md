@@ -1,4 +1,4 @@
-# AI Leaks Tweaker
+# AI Tweaker
 
 # Proudly sponsored by [Snyk](https://snyk.io/?utm_source=open-source&utm_medium=pg-ptr&utm_campaign=ref-2501-osp&utm_content=pg-cta)
 <img width="644" height="442" alt="Scanned By Snyk (2)" src="https://github.com/user-attachments/assets/826473d8-8467-4f41-b1cb-142f97536aa1" />
@@ -62,13 +62,13 @@ For the tool to intercept HTTPS traffic, you must set up the `mitmproxy` backend
 
 3.  **Install the CA Certificate**: `mitmproxy` requires you to install a custom root certificate to decrypt and modify HTTPS traffic.
     - **Easy Method**: While the proxy is running (step 2), click the **Open mitm.it to Get CA Certificate** button in the Proxy tab. This will open a special page in your browser with download links and instructions for your specific device.
-    - **Manual Method**: If the button doesn't work, you can find the certificate file at `~/.mitmproxy/mitmproxy-ca-cert.pem` (on Windows, this is typically `C:\Users\YourUsername\.mitmproxy\mitmproxy-ca-cert.pem`).
-    - **Installation**: Once you have the certificate (either from `mitm.it` or the file), follow the installation steps for your OS. On Windows, double-click the file, choose "Install Certificate...", select "Current User", then "Place all certificates in the following store", and browse to the **Trusted Root Certification Authorities** store.
+    - **Manual Method**: You can find the certificate file at `~/.mitmproxy/mitmproxy-ca-cert.pem` (on Windows, this is typically `C:\Users\YourUsername\.mitmproxy\mitmproxy-ca-cert.pem`).
+    - **Installation**: Once you have the certificate, follow the installation steps for your OS. On Windows, double-click the file, choose "Install Certificate...", select "Current User", then "Place all certificates in the following store", and browse to the "Trusted Root Certification Authorities" store.
 
 4.  **Configure Your System Proxy**:
     - Set your operating system's HTTP and HTTPS proxy to point to `127.0.0.1` on port `8000`.
-    - **On Windows**: Go to Settings > Network & Internet > Proxy. Turn on "Use a proxy server" and set the address to `127.0.0.1` and port to `8000`.
-    - **On macOS**: Go to System Preferences > Network > Advanced > Proxies. Check both "Web Proxy (HTTP)" and "Secure Web Proxy (HTTPS)" and set the server to `127.0.0.1` and port to `8000` for both.
+    - **On Windows**: Go to Settings > Network & Internet > Proxy. Turn on "Use a proxy server" and set the address to `127.0.0.1` and port `8000`.
+    - **On macOS**: Go to System Preferences > Network > Advanced > Proxies. Check both "Web Proxy (HTTP)" and "Secure Web Proxy (HTTPS)" and set the server to `127.0.0.1` and port `8000` for both.
 
     **Alternative: Using a Browser Extension (Recommended)**
 
